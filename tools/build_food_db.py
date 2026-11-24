@@ -90,8 +90,13 @@ def read_off(src, max_n):
         comp = num(g(row, 'completeness')) or 0
         ns = g(row, 'nutriscore_grade').strip().lower()
         nova = g(row, 'nova_group').strip()
-        out.append((scans, comp, [code, name, brand, fmt(kcal, 0), fmt(p), fmt(c), fmt(f), fmt(num(g(row, 'sugars_100g'))), fmt(num(g(row, 'fiber_100g'))), fmt(num(g(row, 'salt_100g')), 2), fmt(sq, 0) if sl else '', sl, ns if ns in 'abcde' and len(ns) == 1 else '', nova if nova in ('1', '2', '3', '4') else '']))
-    print(f'Open Food Facts: {n:,} Zeilen, {len(out):,} passende Produkte', flush=True)
+        lang = g(row, 'lang').strip().lower()
+        tags = [x for x in ct.split(',') if x]
+        dach_only = bool(tags) and all(x in COUNTRIES for x in tags)
+        german = bool(g(row, 'product_name_de')) or lang == 'de' or dach_only or code.startswith(('40', '41', '42', '43', '440', '90', '91', '76'))
+        prio = (scans + 1) * (4 if german else 1)
+        out.append((prio, comp, [code, name, brand, fmt(kcal, 0), fmt(p), fmt(c), fmt(f), fmt(num(g(row, 'sugars_100g'))), fmt(num(g(row, 'fiber_100g'))), fmt(num(g(row, 'salt_100g')), 2), fmt(sq, 0) if sl else '', sl, ns if ns in 'abcde' and len(ns) == 1 else '', nova if nova in ('1', '2', '3', '4') else '']))
+    print(f'Open Food Facts: {n:,} Zeilen, {len(out):,} passende Produkte (behalte max. {max_n:,})', flush=True)
     out.sort(key=lambda x: (-x[0], -x[1]))
     if max_n and len(out) > max_n: out = out[:max_n]
     rows = []
