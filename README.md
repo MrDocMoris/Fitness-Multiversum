@@ -10,6 +10,9 @@ Deine eigene Ernährungs- und Fitness-App, ähnlich wie Yazio, aber nur für dic
 - **Eigene Lebensmittel** mit Nährwerten, Portion und Barcode
 - **Ziele**: Kalorienbedarf nach Mifflin-St Jeor (Geschlecht, Alter, Größe, Gewicht, Aktivität), Ziel abnehmen/halten/zunehmen, Nährstoff-Verteilung, voraussichtliches Datum fürs Zielgewicht, Kalorienziel auf Wunsch auch manuell
 - **Körper**: Gewicht mit Verlauf (30 Tage bis alles), Zielgewicht-Fortschritt, BMI, Körperfett
+- **Große Lebensmittel-Datenbank (offline)**: bis zu 300.000 Produkte aus Open Food Facts (Deutschland, Österreich, Schweiz) plus Grundnahrungsmittel aus der Schweizer Nährwertdatenbank. Einmal laden, danach funktionieren Suche und Barcode-Scan ohne Internet. Wird jede Woche automatisch neu gebaut (`tools/build_food_db.py`, Zweig `daten`). Mit Nutri-Score
+- **Morgen-Check**: Erholungswert aus Schlaf, nächtlicher HRV, Body Battery und Ruhepuls, mit Trainingsempfehlung und 14-Tage-Verlauf
+- **Garmin-Extras**: Trinkmenge aus Garmin und Schweißverlust aufs Wasser-Ziel, Intensitätsminuten als Wochenziel mit Serie, Aktivitätsdetails (Puls-Zonen, Trainingseffekt, Tempo, Höhenmeter), VO2max-Verlauf und Fitnessalter, Schlafphasen über 14 Nächte samt Zusammenhang Schlaf ↔ Essen, Ruhepuls- und HRV-Trend
 - **Garmin** (offizielle Personal API): Schritte, Aktiv- und Gesamtkalorien, Ruhepuls, Body Battery, Stress, Schlaf, Gewicht (Garmin-Waage) und Aktivitäten. Sport-Kalorien werden dem Tagesziel gutgeschrieben (0/50/100 %). Automatischer Abgleich beim Öffnen (höchstens alle 30 Minuten)
 - **Yazio-Import**: Ernährungstagebuch (Lebensmittel, Mengen, Mahlzeiten) und Gewicht aus Yazio übernehmen, bis zu 2 Jahre zurück; doppelte Einträge werden übersprungen
 - **Auswertung**: Kalorien pro Tag gegen das Ziel, Tage im Ziel, Kalorienbilanz mit rechnerischem Fettverlust, Durchschnitt der Nährstoffe, Gewicht, Schritte, größte Kalorienquellen
@@ -44,5 +47,6 @@ Kein eigener Server. Alle Daten liegen nur auf deinem Handy (und in der Sicherun
 ## Aufbau
 - `fitness.html`: die komplette App (HTML/CSS/JS), läuft zum Testen auch im Browser (Garmin und Yazio dort nicht, weil die Server Browser-Anfragen blockieren)
 - `assets/icon.svg`: App-Icon
+- `tools/build_food_db.py` + `.github/workflows/lebensmittel.yml`: baut jede Woche die Offline-Datenbank
 - `native/`: eigene Android-Bausteine (Widget, Spracheingabe, Texterkennung mit ML Kit)
 - `.github/workflows/build-apk.yml`: baut bei jeder Änderung die Android-App (Capacitor 7, natives HTTP für Garmin/Yazio/Open Food Facts, ZXing als Barcode-Ersatz), signiert sie mit `signing/debug.keystore` (wird beim ersten Lauf angelegt), veröffentlicht sie als Release und schreibt `app/version.json`

@@ -210,6 +210,13 @@ details.more[open] summary{color:var(--acc)}
 .ri input{width:76px;text-align:right;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px;outline:none}
 .card.ch{background:linear-gradient(150deg,rgba(111,227,255,.16),rgba(229,155,255,.16));border-color:rgba(167,139,255,.45)}
 input[type=datetime-local]{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 11px;outline:none;color-scheme:dark}
+.rdy{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;font-size:20px;font-weight:700;flex:none;border:3px solid}
+.rdy-good{border-color:#3fd68a;color:#8ff0b8;box-shadow:0 0 14px rgba(63,214,138,.4)}.rdy-mid{border-color:#ffb13d;color:#ffd38a;box-shadow:0 0 14px rgba(255,177,61,.35)}.rdy-low{border-color:#ff5c6c;color:#ff9aa4;box-shadow:0 0 14px rgba(255,92,108,.35)}
+.zbar{display:flex;height:14px;border-radius:7px;overflow:hidden;margin:6px 0 8px;gap:2px}.zbar i{display:block;height:100%}
+.zrow{display:flex;align-items:center;gap:8px;font-size:13px;padding:3px 0}.zrow i{width:10px;height:10px;border-radius:3px;flex:none}.zrow span{flex:1}.zrow small{color:var(--mute);width:38px;text-align:right}
+.bars .b .stack{width:70%;display:flex;flex-direction:column;border-radius:4px 4px 0 0;overflow:hidden;min-height:2px}.bars .b .stack i{display:block;width:100%;border-radius:0;min-height:0}
+.legend{display:flex;gap:12px;justify-content:center;font-size:11px;color:var(--mute);margin-top:6px;flex-wrap:wrap}.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.ns{display:inline-block;font-size:10px;font-weight:800;padding:2px 7px;border-radius:6px;color:#0b0a1a;margin-left:4px;vertical-align:1px}.ns-a{background:#3fd68a}.ns-b{background:#9be15d}.ns-c{background:#ffd36b}.ns-d{background:#ffa94d}.ns-e{background:#ff6b6b}
 </style>
 </head>
 <body>
@@ -312,13 +319,13 @@ const BASICS = BASICS_RAW.map(([name, kcal, p, c, f, sg, sl]) => ({id:'b:' + nam
 
 /* ================= Daten (nur auf dem Gerät) ================= */
 const S = {
-  cfg: Object.assign({name:'', notify:true, mealRemind:false, mealTimes:{breakfast:'09:30', lunch:'13:30', dinner:'19:30'}, weighRemind:false, weighAt:'07:30', credit:100, glass:250, waterRemind:false, showFast:true, moreOpen:false}, store('fx_cfg') || {}),
+  cfg: Object.assign({name:'', notify:true, mealRemind:false, mealTimes:{breakfast:'09:30', lunch:'13:30', dinner:'19:30'}, weighRemind:false, weighAt:'07:30', credit:100, glass:250, waterRemind:false, showFast:true, moreOpen:false, gWater:true, sweatGoal:true}, store('fx_cfg') || {}),
   prof: store('fx_prof') || null,     // {sex, birth, height, weight, goalWeight, activity, goal, macro, water, manualKcal}
   log: store('fx_log') || [],         // Tagebuch-Einträge
   foods: store('fx_foods') || {},     // eigene, gescannte und zuletzt benutzte Lebensmittel
   weights: store('fx_weights') || [], // {id, date, kg, src}
   water: store('fx_water') || {},     // {datum: ml}
-  g: Object.assign({key:'', tok:'', tokExp:0, days:{}, sleep:{}, acts:[], last:0, first:true}, store('fx_garmin') || {}),
+  g: Object.assign({key:'', tok:'', tokExp:0, days:{}, sleep:{}, acts:[], hrv:{}, hyd:{}, vo2:{}, fage:null, last:0, first:true}, store('fx_garmin') || {}),
   sport: store('fx_sport') || [],           // eigener Sport {id, date, type, min, kcal}
   fast: Object.assign({active:null, plan:16, hist:[]}, store('fx_fast') || {}),
   measures: store('fx_meas') || [],         // Körpermaße in cm
@@ -364,7 +371,7 @@ function baseGoal(ds){
 const activeKcal = ds => { const d = gActive() ? S.g.days[ds] : null; return (d && d.active ? d.active : 0) + manualKcal(ds); };
 function kcalGoal(ds){ if((S.prof && S.prof.manualKcal) || adaptiveOn()) return baseGoal(ds); return baseGoal(ds) + Math.round(activeKcal(ds) * (S.cfg.credit ?? 100) / 100); }
 function macroGoal(ds){ const k = kcalGoal(ds), m = MACROS[(S.prof && S.prof.macro) || 'std'] || MACROS.std; return {p:k * m[1] / 100 / 4, c:k * m[2] / 100 / 4, f:k * m[3] / 100 / 9}; }
-const waterGoal = () => (S.prof && S.prof.water) || 2000;
+const waterGoal = ds => ((S.prof && S.prof.water) || 2000) + (ds && S.cfg.sweatGoal !== false && gActive() && S.g.hyd && S.g.hyd[ds] && S.g.hyd[ds].sweat > 0 ? Math.round(S.g.hyd[ds].sweat / 50) * 50 : 0);
 let _ix = null, _ixV = -1;
 function logIndex(){ if(_ix && _ixV === S._v) return _ix; _ix = new Map(); S.log.forEach(e => { if(!_ix.has(e.date)) _ix.set(e.date, []); _ix.get(e.date).push(e); }); _ixV = S._v; return _ix; }
 const entriesOf = ds => logIndex().get(ds) || [];
@@ -387,7 +394,7 @@ function renderHome(){
   const h = new Date().getHours();
   $('#greet').textContent = (h < 11 ? 'Guten Morgen' : h < 18 ? 'Hallo' : 'Guten Abend') + (S.cfg.name ? ` ${S.cfg.name}` : '') + ' 👋';
   const tot = dayTotals(ds), goal = kcalGoal(ds), mg = macroGoal(ds), act = activeKcal(ds), left = goal - tot.kcal;
-  const wml = S.water[ds] || 0, glass = S.cfg.glass || 250, nG = Math.max(8, Math.ceil(waterGoal() / glass)), filled = Math.round(wml / glass);
+  const wml = waterOf(ds), wApp = S.water[ds] || 0, glass = S.cfg.glass || 250, nG = Math.max(8, Math.ceil(waterGoal(ds) / glass)), filled = Math.round(wml / glass);
   const hints = [];
   if(!S.prof) hints.push(`<button class="hint warn" id="h-prof">🎯 <span><b>Ziele einrichten:</b> Größe, Gewicht und Ziel eintragen, dann rechnet die App deinen Kalorienbedarf aus.</span></button>`);
   if(!gActive() && !store('fx_hide_g')) hints.push(`<button class="hint" id="h-g">⌚ <span><b>Garmin verbinden</b>: Schritte und verbrannte Kalorien kommen dann automatisch dazu.</span></button>`);
@@ -414,9 +421,10 @@ function renderHome(){
       ${moreNutri(tot)}
       ${adaptiveOn() ? '<div class="muted" style="font-size:11px;margin-top:6px">🧠 Ziel aus deinem echten Verbrauch gelernt</div>' : ''}
     </div>
+    ${ds === t && gActive() ? readinessCard(t) : ''}
     ${ds === t ? challengeCard() : ''}
     ${ds === t && S.cfg.showFast ? '<div id="fastcard"></div>' : ''}
-    <div class="card"><div class="water"><div style="font-size:26px">💧</div><div style="flex:1;min-width:0"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><b>Wasser</b><span class="muted">${de(wml / 1000, 2)} / ${de(waterGoal() / 1000, 1)} l</span></div>
+    <div class="card"><div class="water"><div style="font-size:26px">💧</div><div style="flex:1;min-width:0"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><b>Wasser</b><span class="muted">${de(wml / 1000, 2)} / ${de(waterGoal(ds) / 1000, 1)} l${wml > wApp ? ' · inkl. Garmin' : ''}${waterGoal(ds) > waterGoal() ? ' · +Schweiß' : ''}</span></div>
       <div class="gl">${Array.from({length:nG}, (_, i) => `<button data-g="${i}" class="${i < filled ? 'on' : ''}" aria-label="Glas"></button>`).join('')}</div></div></div></div>
     ${sl && sl.sec ? `<div class="hint" style="margin-bottom:12px">😴 <span>Schlaf: <b>${fmtDur(sl.sec)}</b>${sl.score ? ` · Schlafwert ${sl.score}` : ''}</span></div>` : ''}
     ${sp.length ? `<div class="hint" style="margin-bottom:12px" id="h-sp">${SPORT[sp[0].type] ? SPORT[sp[0].type].i : '💪'} <span>Sport: <b>${sp.map(x => `${(SPORT[x.type] || SPORT.other).n} ${x.min} min`).join(', ')}</b> · ${de(manualKcal(ds))} kcal</span></div>` : ''}
@@ -444,6 +452,7 @@ function renderHome(){
   if($('#h-ch')) $('#h-ch').onclick = () => { S.ch.on = true; challengeSheet(); };
   if($('#h-w')) $('#h-w').onclick = () => weightSheet();
   if($('#h-sp')) $('#h-sp').onclick = () => showView('act');
+  if($('#h-ready')) $('#h-ready').onclick = readinessSheet;
   if($('#fastcard')) renderFastCard();
   wireChallenge();
   updateWidget();
@@ -461,8 +470,8 @@ function searchLocal(q){
   if(toks.length) list = list.filter(f => { const h = (f.name + ' ' + (f.brand || '')).toLowerCase(); return toks.every(t => h.includes(t)); });
   return list.sort((a, b) => (b.fav ? 1 : 0) - (a.fav ? 1 : 0) || (b.uses || 0) - (a.uses || 0) || (b.last || 0) - (a.last || 0) || a.name.localeCompare(b.name));
 }
-const foodRow = (f, extra) => `<button class="row" data-f="${esc(f.id)}"><div class="ic">${f.fav ? '⭐' : f.recipe ? '🍲' : f.own ? '✏️' : f.code ? '🏷️' : f.basic ? '🥗' : f.src === 'yazio' ? '🍏' : '🕘'}</div><div class="mid"><b>${esc(f.name)}</b><small>${esc([f.brand, f.serving && f.serving.label && f.serving.g ? `${f.serving.label} = ${de(f.serving.g)} g` : ''].filter(Boolean).join(' · ') || (extra || ''))}</small></div><div class="rt"><b>${de(f.per100.kcal)}</b><small>kcal/100${f.unit === 'ml' ? ' ml' : ' g'}</small></div></button>`;
-let _online = [];
+const foodRow = (f, extra) => `<button class="row" data-f="${esc(f.id)}"><div class="ic">${f.fav ? '⭐' : f.recipe ? '🍲' : f.own ? '✏️' : f.code ? '🏷️' : f.basic || f.generic ? '🥗' : f.src === 'yazio' ? '🍏' : '🕘'}</div><div class="mid"><b>${esc(f.name)}</b><small>${esc([f.brand, f.serving && f.serving.label && f.serving.g ? `${f.serving.label} = ${de(f.serving.g)} g` : ''].filter(Boolean).join(' · ') || (extra || ''))}</small></div><div class="rt"><b>${de(f.per100.kcal)}</b><small>kcal/100${f.unit === 'ml' ? ' ml' : ' g'}</small></div></button>`;
+let _online = [], _dbRes = [];
 function foodSheet(meal, presetQ, opts){
   opts = opts || {}; const pick = !!opts.pick;
   meal = meal || mealForNow();
@@ -485,12 +494,16 @@ function foodSheet(meal, presetQ, opts){
       if(!fav.length && !rec.length) html += `<h3>Grundnahrungsmittel</h3>${BASICS.slice(0, 20).map(f => foodRow(f)).join('')}`;
     }else{
       html += loc.length ? `<h3>Gespeichert & Grundnahrungsmittel</h3>${loc.map(f => foodRow(f)).join('')}` : '';
+      const have = new Set(loc.map(f => f.id)); _dbRes = fdbSearch(q, 40).filter(f => !have.has(f.id));
+      html += _dbRes.length ? `<h3>📦 Datenbank</h3>${_dbRes.map(f => foodRow(f)).join('')}` : FDB.state === 'loading' ? '<div class="muted" style="padding:8px 2px">⏳ Datenbank wird vorbereitet…</div>' : '';
+      if(!FDB.meta) html += `<button class="hint" id="f-fdb" style="margin:8px 0">📦 <span><b>Große Datenbank laden</b> – Hunderttausende Produkte offline und sofort durchsuchbar.</span></button>`;
       html += _online.length ? `<h3>Open Food Facts</h3>${_online.map(f => foodRow(f)).join('')}` : '';
       html += `<button class="btn" id="f-on2" style="width:100%;margin-top:8px">🌍 „${esc(q)}“ in Open Food Facts suchen</button>`;
     }
     $('#fres').innerHTML = html || '<div class="empty">Nichts gefunden.</div>';
-    $$('#fres [data-f]').forEach(b => b.onclick = () => { const id = b.dataset.f; const f = allLocalFoods().find(x => x.id === id) || _online.find(x => x.id === id); amountSheet(f, getMeal(), null, opts); });
+    $$('#fres [data-f]').forEach(b => b.onclick = () => { const id = b.dataset.f; const f = allLocalFoods().find(x => x.id === id) || _dbRes.find(x => x.id === id) || _online.find(x => x.id === id); amountSheet(f, getMeal(), null, opts); });
     if($('#f-on2')) $('#f-on2').onclick = online;
+    if($('#f-fdb')) $('#f-fdb').onclick = fdbSheet;
   };
   const online = async () => {
     const q = $('#fq').value.trim(); if(q.length < 2){ toast('Bitte zuerst einen Suchbegriff eingeben'); $('#fq').focus(); return; }
@@ -508,12 +521,13 @@ function foodSheet(meal, presetQ, opts){
   $('#f-own').onclick = () => ownFoodSheet(null, {name:$('#fq').value.trim()}, getMeal(), opts);
   if(!pick){ $('#f-quick').onclick = () => quickSheet(getMeal()); $('#f-text').onclick = () => textSheet(getMeal()); $('#f-dish').onclick = () => dishesSheet(getMeal()); }
   draw();
-  if(presetQ && presetQ.length > 2 && !searchLocal(presetQ).length) online();
+  if(FDB.meta && FDB.state !== 'ready') fdbLoad().then(() => { if($('#fq') && $('#fres')) draw(); });
+  if(presetQ && presetQ.length > 2 && !searchLocal(presetQ).length && !FDB.meta) online();
   if(!presetQ) setTimeout(() => { const i = $('#fq'); if(i) i.focus(); }, 300);
 }
 
 /* Open Food Facts (freie Lebensmittel-Datenbank, auch für Barcodes) */
-const OFF_FIELDS = 'code,product_name,product_name_de,generic_name,brands,nutriments,serving_quantity,serving_size,quantity';
+const OFF_FIELDS = 'code,product_name,product_name_de,generic_name,brands,nutriments,serving_quantity,serving_size,quantity,nutriscore_grade,nova_group';
 const offHeaders = () => NATIVE ? {'User-Agent':'FitnessMultiversum/1.0 (private Android-App)'} : {};
 function offToFood(p){
   if(!p) return null;
@@ -522,7 +536,7 @@ function offToFood(p){
   if(kcal == null) return null;
   const name = (p.product_name_de || p.product_name || p.generic_name || '').trim(); if(!name) return null;
   const sq = parseFloat(p.serving_quantity);
-  return {id:'off:' + p.code, code:p.code, name, brand:String(p.brands || '').split(',')[0].trim(), per100:{kcal:+kcal || 0, p:+n.proteins_100g || 0, c:+n.carbohydrates_100g || 0, f:+n.fat_100g || 0, sugar:+n.sugars_100g || 0, fiber:+n.fiber_100g || 0, salt:+n.salt_100g || 0}, serving:sq > 0 ? {g:sq, label:p.serving_size ? String(p.serving_size).replace(/\s*\(.*\)/, '').slice(0, 24) : 'Portion'} : null, src:'off'};
+  return {id:'off:' + p.code, code:p.code, name, brand:String(p.brands || '').split(',')[0].trim(), per100:{kcal:+kcal || 0, p:+n.proteins_100g || 0, c:+n.carbohydrates_100g || 0, f:+n.fat_100g || 0, sugar:+n.sugars_100g || 0, fiber:+n.fiber_100g || 0, salt:+n.salt_100g || 0}, serving:sq > 0 ? {g:sq, label:p.serving_size ? String(p.serving_size).replace(/\s*\(.*\)/, '').slice(0, 24) : 'Portion'} : null, ns:/^[a-e]$/.test(p.nutriscore_grade || '') ? p.nutriscore_grade : null, nova:p.nova_group || null, src:'off'};
 }
 async function offSearch(q){
   const url = `https://de.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=30&lc=de&fields=${OFF_FIELDS}`;
@@ -545,7 +559,7 @@ function amountSheet(food, meal, entry, opts){
   let unit = entry ? (entry.portions && sv ? 'p' : 'g') : (opts.grams ? 'g' : sv ? 'p' : 'g');
   let amt = entry ? (unit === 'p' ? entry.portions : entry.grams) : (opts.grams || (sv ? 1 : 100));
   const u = food.unit || 'g';
-  openSheet(`<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">${opts.back ? '<button class="iconbtn" id="a-back">←</button>' : ''}<div style="flex:1;min-width:0"><h2 style="margin:0">${food.recipe ? '🍲 ' : ''}${esc(food.name)}</h2><div class="muted">${esc(food.brand || '')}${food.brand ? ' · ' : ''}${de(food.per100.kcal)} kcal pro 100 ${u}</div></div><button class="iconbtn" id="a-fav" style="font-size:18px">${food.fav ? '⭐' : '☆'}</button></div>
+  openSheet(`<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">${opts.back ? '<button class="iconbtn" id="a-back">←</button>' : ''}<div style="flex:1;min-width:0"><h2 style="margin:0">${food.recipe ? '🍲 ' : ''}${esc(food.name)}</h2><div class="muted">${esc(food.brand || '')}${food.brand ? ' · ' : ''}${de(food.per100.kcal)} kcal pro 100 ${u}${nsBadge(food)}</div></div><button class="iconbtn" id="a-fav" style="font-size:18px">${food.fav ? '⭐' : '☆'}</button></div>
     ${pick ? '' : segHtml('a-meal', MEALS.map(([k, n, i]) => [k, i + ' ' + n.replace('essen', '')]), entry ? entry.meal : meal)}
     <div class="two" style="margin-top:12px;align-items:center"><div style="flex:1.3"><input class="amtin" id="a-amt" inputmode="decimal" value="${de(amt, 2)}"></div><div>${segHtml('a-unit', [['g', u], ...(sv ? [['p', esc(sv.label || 'Portion')]] : [])], unit)}</div></div>
     <div class="chips" id="a-quick" style="margin-top:8px"></div>
@@ -575,7 +589,7 @@ function amountSheet(food, meal, entry, opts){
 }
 function rememberFood(f){
   if(S.foods[f.id]) return S.foods[f.id];
-  const copy = {id:f.id, name:f.name, brand:f.brand || '', per100:{...f.per100}, serving:f.serving || null, code:f.code || null, unit:f.unit || 'g', src:f.src || (f.basic ? 'basic' : 'app'), basic:!!f.basic, own:!!f.own};
+  const copy = {id:f.id, name:f.name, brand:f.brand || '', per100:{...f.per100}, serving:f.serving || null, code:f.code || null, unit:f.unit || 'g', src:f.src || (f.basic ? 'basic' : 'app'), basic:!!f.basic, own:!!f.own, ns:f.ns || null, nova:f.nova || null, generic:!!f.generic};
   S.foods[f.id] = copy; return copy;
 }
 
@@ -668,6 +682,7 @@ async function lookupBarcode(code, meal, opts){
   opts = Object.assign({}, opts, {scan:true});
   const local = Object.values(S.foods).find(f => f.code === code);
   if(local){ amountSheet(local, meal, null, opts); return; }
+  if(FDB.meta){ await fdbLoad(); const df = fdbBarcode(code); if(df){ amountSheet(df, meal, null, opts); return; } }
   openSheet(`<h2>Suche ${esc(code)}…</h2><div class="empty">⏳ Frage Open Food Facts</div>`);
   let f = null, offline = false;
   try{ f = await offBarcode(code); }catch(e){ offline = true; }
@@ -824,31 +839,48 @@ async function garminSync(manual){
   if(!S.g.key || _gBusy) return;
   if(!NATIVE && !manual) return;
   _gBusy = true; if(manual) toast('⌚ Garmin wird abgeglichen…');
-  const t = todayStr(), first = S.g.first, errs = [];
-  const start = addDays(t, first ? -90 : -7);
+  const t = todayStr(), first = S.g.first, errs = [], GROUPS = 9;
+  const wins = (days, size) => { const out = []; let end = t; const stop = addDays(t, -days); while(end > stop){ const st = addDays(end, -(size - 1)); out.push([st < stop ? stop : st, end]); end = addDays(st, -1); } return out; };
+  S.g.hrv = S.g.hrv || {}; S.g.hyd = S.g.hyd || {}; S.g.vo2 = S.g.vo2 || {};
   try{
     await gToken();
-    try{ // Tageswerte: Schritte & Kalorien
-      const rows = arr(await gGet('/usersummary-service/v2/dailysummaries', {startDate:start, endDate:t}));
-      rows.forEach(d => { const ds = d.calendarDate; if(!ds) return; S.g.days[ds] = {steps:dig(d, 'movement', 'steps', 'value') ?? null, stepGoal:dig(d, 'movement', 'steps', 'goal') ?? null, dist:dig(d, 'movement', 'steps', 'distanceInMeters') ?? null, total:dig(d, 'calories', 'burnedTotal') ?? null, active:dig(d, 'calories', 'burnedActive') ?? null, resting:dig(d, 'calories', 'burnedResting') ?? null, rhr:dig(d, 'heartRate', 'restingValue') ?? null, stress:dig(d, 'stress', 'avgLevel') ?? null, bbMax:dig(d, 'bodyBattery', 'maxValue') ?? null, bbMin:dig(d, 'bodyBattery', 'minValue') ?? null, im:(dig(d, 'intensityMinutes', 'moderate') || 0) + 2 * (dig(d, 'intensityMinutes', 'vigorous') || 0)}; });
+    try{ // Tageswerte: Schritte, Kalorien, Puls, Stress, Body Battery, Intensität
+      const rows = arr(await gGet('/usersummary-service/v2/dailysummaries', {startDate:addDays(t, first ? -180 : -7), endDate:t}));
+      rows.forEach(d => { const ds = d.calendarDate; if(!ds) return; S.g.days[ds] = {steps:dig(d, 'movement', 'steps', 'value') ?? null, stepGoal:dig(d, 'movement', 'steps', 'goal') ?? null, dist:dig(d, 'movement', 'steps', 'distanceInMeters') ?? null, total:dig(d, 'calories', 'burnedTotal') ?? null, active:dig(d, 'calories', 'burnedActive') ?? null, resting:dig(d, 'calories', 'burnedResting') ?? null, rhr:dig(d, 'heartRate', 'restingValue') ?? null, stress:dig(d, 'stress', 'avgLevel') ?? null, bbMax:dig(d, 'bodyBattery', 'maxValue') ?? null, bbMin:dig(d, 'bodyBattery', 'minValue') ?? null, im:(dig(d, 'intensityMinutes', 'moderate') || 0) + 2 * (dig(d, 'intensityMinutes', 'vigorous') || 0), imGoal:dig(d, 'intensityMinutes', 'goal') ?? null}; });
     }catch(e){ errs.push('Tageswerte'); }
-    try{ // Schlaf (max. 31 Tage pro Abfrage)
-      const ss = first ? addDays(t, -30) : addDays(t, -7);
-      arr(await gGet('/sleep-service/sleep/dailySleepSummariesByDate', {startDate:ss, endDate:t})).forEach(n => { if(n.calendarDate && n.sleepTimeSeconds) S.g.sleep[n.calendarDate] = {sec:n.sleepTimeSeconds, deep:n.deepSleepSeconds, rem:n.remSleepSeconds, score:dig(n, 'sleepScores', 'overall', 'value') ?? null}; });
+    try{ // Schlaf mit Phasen (max. 31 Tage pro Abfrage)
+      for(const [a, b] of wins(first ? 90 : 7, 31)) arr(await gGet('/sleep-service/sleep/dailySleepSummariesByDate', {startDate:a, endDate:b})).forEach(n => { if(n.calendarDate && n.sleepTimeSeconds) S.g.sleep[n.calendarDate] = {sec:n.sleepTimeSeconds, deep:n.deepSleepSeconds ?? null, light:n.lightSleepSeconds ?? null, rem:n.remSleepSeconds ?? null, awake:n.awakeSleepSeconds ?? null, score:dig(n, 'sleepScores', 'overall', 'value') ?? null, need:dig(n, 'sleepNeed', 'actual') ?? null}; });
     }catch(e){ errs.push('Schlaf'); }
-    try{ // Gewicht (z. B. von einer Garmin-Waage)
+    try{ // HRV über Nacht
+      for(const [a, b] of wins(first ? 90 : 7, 31)){ const r = await gGet(`/hrv-service/hrv/daily/${a}/${b}`); ((r && r.hrvSummaries) || arr(r)).forEach(h => { if(h.calendarDate) S.g.hrv[h.calendarDate] = {last:h.lastNightAvg ?? null, week:h.weeklyAvg ?? null, status:h.status || '', lo:dig(h, 'baseline', 'balancedLow') ?? null, hi:dig(h, 'baseline', 'balancedUpper') ?? null}; }); }
+    }catch(e){ errs.push('HRV'); }
+    try{ // Trinkmenge & Schweißverlust
+      for(const [a, b] of wins(first ? 30 : 7, 31)) arr(await gGet(`/usersummary-service/stats/hydration/daily/${a}/${b}`)).forEach(x => { const ds = x.calendarDate; if(!ds) return; const ml = x.valueInML ?? x.intakeInML ?? x.value ?? null, goal = x.goalInML ?? x.goal ?? null, sweat = x.sweatLossInML ?? x.sweatLoss ?? null; S.g.hyd[ds] = {ml:ml != null ? +ml : null, goal:goal != null ? +goal : null, sweat:sweat != null ? +sweat : null}; });
+    }catch(e){ errs.push('Wasser'); }
+    try{ // Gewicht (z. B. Garmin-Waage)
       const ws = arr(await gGet(`/weight-service/weight/all/${addDays(t, first ? -365 : -30)}/${t}`));
       let n = 0;
       ws.forEach(x => { let w = x.weight; if(!w) return; if(w > 500) w = w / 1000; const ds = x.calendarDate || (x.date ? ymd(new Date(x.date)) : null); if(!ds) return; const id = 'g' + (x.samplePk || ds + '-' + w); if(S.weights.some(y => y.id === id)) return; S.weights.push({id, date:ds, kg:r1(w), fat:x.bodyFat || null, src:'garmin', ts:x.date || 0}); n++; });
       if(n) saveWeights();
     }catch(e){ errs.push('Gewicht'); }
-    try{ // Aktivitäten
-      const acts = arr(await gGet('/activitylist-service/activities/search/activities', {start:0, limit:40, startDate:addDays(t, first ? -60 : -21), endDate:t}));
+    try{ // VO2max (max. 28 Tage pro Abfrage)
+      for(const [a, b] of wins(first ? 168 : 14, 28)) arr(await gGet(`/metrics-service/metrics/maxmet/daily/${a}/${b}`)).forEach(rec => {
+        const add = (v, sport) => { const val = v.vo2MaxPreciseValue ?? v.vo2MaxValue; if(typeof val === 'number' && v.calendarDate) S.g.vo2[v.calendarDate + '|' + sport] = {date:v.calendarDate, v:Math.round(val * 10) / 10, sport}; };
+        if(rec && rec.calendarDate) add(rec, rec.sport || 'generic');
+        Object.entries(rec || {}).forEach(([k, v]) => { if(v && typeof v === 'object' && !Array.isArray(v)) add(v, k); });
+      });
+    }catch(e){ errs.push('VO2max'); }
+    try{ // Fitnessalter
+      const r = await gGet(`/fitnessage-service/fitnessage/v2/${t}`, {fullHistoryScan:true});
+      if(r && (r.fitnessAge || r.chronologicalAge)) S.g.fage = {fa:r.fitnessAge ?? null, ca:r.chronologicalAge ?? null, ach:r.achievableFitnessAge ?? null, prev:r.previousFitnessAge ?? null, date:t};
+    }catch(e){ errs.push('Fitnessalter'); }
+    try{ // Aktivitäten mit Details
+      const acts = arr(await gGet('/activitylist-service/activities/search/activities', {start:0, limit:50, startDate:addDays(t, first ? -90 : -21), endDate:t}));
       const m = new Map(S.g.acts.map(a => [a.id, a]));
-      acts.forEach(a => m.set(a.activityId, {id:a.activityId, name:a.activityName || 'Aktivität', type:dig(a, 'activityType', 'typeKey') || '', start:a.startTimeLocal || '', dur:a.duration || 0, dist:a.distance || 0, kcal:a.calories || 0, hr:a.averageHR || null, steps:a.steps || null}));
-      S.g.acts = [...m.values()].sort((a, b) => String(b.start).localeCompare(String(a.start))).slice(0, 150);
+      acts.forEach(a => m.set(a.activityId, {id:a.activityId, name:a.activityName || 'Aktivität', type:dig(a, 'activityType', 'typeKey') || (typeof a.activityType === 'string' ? a.activityType : ''), start:a.startTimeLocal || '', dur:a.duration || 0, dist:a.distance || 0, kcal:a.calories || 0, hr:a.averageHR || null, maxHr:a.maxHR || null, steps:a.steps || null, elev:a.elevationGain || null, spd:a.averageSpeed || null, ae:a.aerobicTrainingEffect ?? null, an:a.anaerobicTrainingEffect ?? null, load:a.activityTrainingLoad ? Math.round(a.activityTrainingLoad) : null, vo2:a.vO2MaxValue || null, z:[1, 2, 3, 4, 5].map(i => a['hrTimeInZone_' + i] || 0)}));
+      S.g.acts = [...m.values()].sort((a, b) => String(b.start).localeCompare(String(a.start))).slice(0, 200);
     }catch(e){ errs.push('Aktivitäten'); }
-    S.g.first = false; S.g.last = Date.now(); S.g.err = errs.length === 4 ? 'Abgleich fehlgeschlagen – später nochmal probieren.' : '';
+    S.g.first = false; S.g.last = Date.now(); S.g.err = errs.length >= GROUPS - 1 ? 'Abgleich fehlgeschlagen – später nochmal probieren.' : '';
     saveG(); renderAll(); badgeCheck();
     if(manual) toast(errs.length ? `⌚ Abgeglichen (ohne ${errs.join(', ')})` : '⌚ Garmin abgeglichen');
   }catch(e){
@@ -866,10 +898,13 @@ function garminSheet(){
     <button class="btn" id="gk-open" style="width:100%">🌐 Garmin-Seite öffnen</button>
     <label class="f">Persönlicher API-Schlüssel</label><input type="password" id="gk" value="${esc(S.g.key)}" placeholder="Schlüssel hier einfügen" autocomplete="off">
     <div class="sw"><div>Sport-Kalorien gutschreiben<div class="muted">Kalorien aus Bewegung erhöhen dein Tagesziel</div></div>${segHtml('gk-cr', [[0, 'Aus'], [50, '50 %'], [100, '100 %']], S.cfg.credit)}</div>
+    ${on ? `<div class="sw"><div>Trinkmenge aus Garmin übernehmen<div class="muted">was du in Garmin Connect einträgst, zählt auch hier</div></div><button class="tog${S.cfg.gWater !== false ? ' on' : ''}" id="gk-w"></button></div>
+    <div class="sw"><div>Schweißverlust aufs Wasser-Ziel<div class="muted">an Sporttagen steigt dein Ziel automatisch</div></div><button class="tog${S.cfg.sweatGoal !== false ? ' on' : ''}" id="gk-sw"></button></div>` : ''}
     <div class="btns"><button class="btn pri" id="gk-save">${on ? 'Speichern & abgleichen' : 'Verbinden'}</button>${on ? '<button class="btn del" id="gk-del">Trennen</button>' : ''}</div>
-    <p class="muted" style="font-size:12px;margin-top:12px">🔒 Der Schlüssel bleibt nur auf deinem Handy und wird nicht mitgesichert. Abgerufen werden Schritte, Kalorien, Schlaf, Gewicht und Aktivitäten. ${NATIVE ? '' : '<br>⚠️ Im Browser blockiert Garmin die Abfrage – das klappt nur in der Android-App.'}</p>`);
+    <p class="muted" style="font-size:12px;margin-top:12px">🔒 Der Schlüssel bleibt nur auf deinem Handy und wird nicht mitgesichert. Abgerufen werden Schritte, Kalorien, Schlaf, HRV, Trinkmenge, Gewicht, VO2max, Fitnessalter und Aktivitäten. ${NATIVE ? '' : '<br>⚠️ Im Browser blockiert Garmin die Abfrage – das klappt nur in der Android-App.'}</p>`);
   $('#gk-open').onclick = () => openUrl('https://connect.garmin.com/app/settings/personalApiToken');
   wireSeg('gk-cr', v => { S.cfg.credit = +v; saveCfg(); renderAll(); });
+  [['#gk-w', 'gWater'], ['#gk-sw', 'sweatGoal']].forEach(([id, k]) => { if($(id)) $(id).onclick = e => { S.cfg[k] = S.cfg[k] === false; e.currentTarget.classList.toggle('on', S.cfg[k] !== false); saveCfg(); renderAll(); }; });
   $('#gk-save').onclick = async () => {
     const k = $('#gk').value.trim(); if(k.length < 10){ toast('Bitte den Schlüssel einfügen'); return; }
     const changed = k !== S.g.key; S.g.key = k; if(changed){ S.g.tok = ''; S.g.tokExp = 0; S.g.first = true; } S.g.err = ''; saveG();
@@ -894,29 +929,51 @@ function renderAct(){
     $('#act').innerHTML = `<h1 style="margin:4px 0 14px">Aktivität</h1>
       <div class="kv"><div><span>🔥 Heute Sport</span><b>${de(manualKcal(t))} kcal</b></div><div><span>Diese Woche</span><b>${de(week.reduce((s, d) => s + manualKcal(d), 0))} kcal</b><span>${S.sport.filter(x => x.date >= week[0]).reduce((s, x) => s + x.min, 0)} min</span></div></div>
       ${sportHtml}
-      <div class="card" style="margin-top:14px"><div style="display:flex;gap:12px;align-items:center"><div style="font-size:34px">⌚</div><div style="flex:1"><b>Garmin verbinden</b><div class="muted">Schritte, Kalorien, Schlaf und Aktivitäten kommen dann automatisch.</div></div></div><div class="btns"><button class="btn pri" id="ac-con">Verbinden</button></div></div>`;
+      <div class="card" style="margin-top:14px"><div style="display:flex;gap:12px;align-items:center"><div style="font-size:34px">⌚</div><div style="flex:1"><b>Garmin verbinden</b><div class="muted">Schritte, Kalorien, Schlaf, HRV, VO2max und Aktivitäten kommen dann automatisch.</div></div></div><div class="btns"><button class="btn pri" id="ac-con">Verbinden</button></div></div>`;
     $('#ac-con').onclick = garminSheet;
   }else{
-    const d = S.g.days[t] || {}, sl = S.g.sleep[t];
+    const d = S.g.days[t] || {}, sl = S.g.sleep[t], hv = S.g.hrv[t];
     const week = Array.from({length:7}, (_, i) => addDays(t, i - 6));
     const steps = week.map(ds => ({v:(S.g.days[ds] || {}).steps || 0, l:WD[parse(ds).getDay()], cur:ds === t, cls:((S.g.days[ds] || {}).steps || 0) >= ((S.g.days[ds] || {}).stepGoal || 10000) ? 'ok' : ''}));
     const avgSteps = week.map(ds => (S.g.days[ds] || {}).steps).filter(v => v != null); const avg = avgSteps.length ? avgSteps.reduce((a, b) => a + b, 0) / avgSteps.length : 0;
+    const ws = weekStart(t), ig = imGoal(), imW = imWeek(ws), imDays = Array.from({length:7}, (_, i) => { const ds = addDays(ws, i); return {v:(S.g.days[ds] || {}).im || 0, l:WD[parse(ds).getDay()], cur:ds === t, cls:'ok'}; }), imS = imStreak();
+    const nights = Array.from({length:14}, (_, i) => { const ds = addDays(t, i - 13); return {s:S.g.sleep[ds], l:parse(ds).getDate() + '.', cur:ds === t}; });
+    const sw = nights.filter(n => n.s).map(n => n.s.sec), sAvg = sw.length ? sw.reduce((a, b) => a + b, 0) / sw.length : 0, sfl = sleepFoodLink();
+    const hr = S.heartRange || 30, from = addDays(t, -hr);
+    const rhrPts = Object.keys(S.g.days).filter(ds => ds >= from && S.g.days[ds].rhr).sort().map(ds => ({t:parse(ds).getTime(), y:S.g.days[ds].rhr, ds}));
+    const hrvPts = Object.keys(S.g.hrv || {}).filter(ds => ds >= from && S.g.hrv[ds].last).sort().map(ds => ({t:parse(ds).getTime(), y:S.g.hrv[ds].last, ds}));
+    const v2 = vo2Series(), v2l = v2[v2.length - 1], v2f = v2.find(x => x.date >= addDays(t, -90)) || v2[0], fa = S.g.fage;
     $('#act').innerHTML = `<div style="display:flex;align-items:center;gap:10px;margin:4px 0 14px"><h1 style="flex:1">Aktivität</h1><button class="chip" id="ac-sync">↻ Abgleichen</button><button class="iconbtn" id="ac-set">⚙️</button></div>
       ${S.g.err ? `<button class="hint bad" id="ac-err" style="margin-bottom:12px">⚠️ <span>${esc(S.g.err)}</span></button>` : ''}
+      ${readinessCard(t)}
       <div class="card"><div class="muted">Heute</div>
         <div style="display:flex;align-items:baseline;gap:8px"><div class="big">${de(d.steps)}</div><span class="muted">/ ${de(d.stepGoal || 10000)} Schritte</span></div>
         <div class="prog" style="height:10px"><i style="width:${Math.min(100, (d.steps || 0) / (d.stepGoal || 10000) * 100)}%"></i></div>
         <div class="kv three" style="margin-bottom:0"><div><span>🔥 Aktiv</span><b>${de(activeKcal(t))}</b><span>kcal${manualKcal(t) ? ' inkl. eigener' : ''}</span></div><div><span>Gesamt</span><b>${de(d.total)}</b><span>kcal</span></div><div><span>Strecke</span><b>${de((d.dist || 0) / 1000, 1)}</b><span>km</span></div></div></div>
-      <div class="kv">${d.rhr ? `<div><span>❤️ Ruhepuls</span><b>${d.rhr}</b><span>bpm</span></div>` : ''}${sl ? `<div><span>😴 Schlaf</span><b>${fmtDur(sl.sec)}</b><span>${sl.score ? 'Schlafwert ' + sl.score : ''}</span></div>` : ''}${d.bbMax != null ? `<div><span>🔋 Body Battery</span><b>${d.bbMin ?? '–'}–${d.bbMax}</b><span>heute</span></div>` : ''}${d.im ? `<div><span>⚡ Intensitätsminuten</span><b>${d.im}</b><span>heute</span></div>` : ''}${d.stress ? `<div><span>😮‍💨 Stress</span><b>${d.stress}</b><span>Durchschnitt</span></div>` : ''}</div>
+      <div class="kv">${d.rhr ? `<div><span>❤️ Ruhepuls</span><b>${d.rhr}</b><span>bpm</span></div>` : ''}${hv && hv.last ? `<div><span>💓 HRV letzte Nacht</span><b>${hv.last} ms</b><span>${hrvDe(hv.status)}</span></div>` : ''}${d.bbMax != null ? `<div><span>🔋 Body Battery</span><b>${d.bbMin ?? '–'}–${d.bbMax}</b><span>heute</span></div>` : ''}${d.stress ? `<div><span>😮‍💨 Stress</span><b>${d.stress}</b><span>Durchschnitt</span></div>` : ''}${S.g.hyd[t] && S.g.hyd[t].sweat ? `<div><span>💦 Schweißverlust</span><b>${de(S.g.hyd[t].sweat)} ml</b><span>kommt aufs Wasser-Ziel</span></div>` : ''}</div>
+      <h3>⚡ Intensitätsminuten · diese Woche</h3>
+      <div class="card"><div style="display:flex;align-items:baseline;gap:8px"><div class="big">${imW}</div><span class="muted">/ ${ig} min</span>${imS >= 2 ? `<span class="chip" style="margin-left:auto">🔥 ${imS} Wochen in Folge</span>` : ''}</div>
+        <div class="prog" style="height:10px"><i style="width:${Math.min(100, imW / ig * 100)}%;${imW >= ig ? 'background:linear-gradient(90deg,#8ff0b8,#3fd68a)' : ''}"></i></div>
+        ${barsHtml(imDays)}<div class="muted" style="font-size:11px">Intensive Minuten zählen doppelt · Empfehlung der WHO: 150 Minuten pro Woche</div></div>
       <h3>Schritte · 7 Tage <span style="float:right;text-transform:none;letter-spacing:0">Ø ${de(avg)}</span></h3>
       <div class="card">${barsHtml(steps)}</div>
+      ${sw.length ? `<h3>😴 Schlaf · 14 Nächte <span style="float:right;text-transform:none;letter-spacing:0">Ø ${fmtDur(sAvg)}</span></h3><div class="card">${sleepBars(nights)}</div>
+        ${sfl ? `<div class="hint ${Math.abs(sfl.diff) >= 150 ? 'warn' : 'good'}" style="margin-bottom:12px">🍽️ <span>${Math.abs(sfl.diff) < 100 ? `Dein Schlaf beeinflusst kaum, wie viel du isst (${sfl.nShort} kurze / ${sfl.nOk} gute Nächte verglichen).` : `Nach kurzen Nächten (unter 6,5 h) isst du im Schnitt <b>${de(Math.abs(sfl.diff))} kcal ${sfl.diff > 0 ? 'mehr' : 'weniger'}</b> als nach mind. 7 h Schlaf.`}</span></div>` : ''}` : ''}
+      ${rhrPts.length > 1 || hrvPts.length > 1 ? `<h3>❤️ Herz</h3>${segHtml('ac-hr', [[30, '30 Tage'], [90, '3 Monate'], [180, '6 Monate']], hr)}
+        ${rhrPts.length > 1 ? `<div class="card" style="margin-top:8px"><div class="muted">Ruhepuls (bpm) ${rhrPts[rhrPts.length - 1].y < rhrPts[0].y ? '· sinkt 👍' : ''}</div>${lineChart(rhrPts, {dec:0})}</div>` : ''}
+        ${hrvPts.length > 1 ? `<div class="card"><div class="muted">HRV nachts (ms) ${hrvPts[hrvPts.length - 1].y > hrvPts[0].y ? '· steigt 👍' : ''}</div>${lineChart(hrvPts, {dec:0})}</div>` : ''}` : ''}
+      ${v2l || fa ? `<h3>🫀 Fitness</h3><div class="kv">${v2l ? `<div><span>VO2max</span><b>${de(v2l.v, 1)}</b><span>${v2f && v2f !== v2l ? `${v2l.v - v2f.v >= 0 ? '+' : ''}${de(v2l.v - v2f.v, 1)} seit ${fmtShortDay(v2f.date)}` : fmtShortDay(v2l.date)}</span></div>` : ''}${fa && fa.fa ? `<div><span>Fitnessalter</span><b>${de(fa.fa, 1)} Jahre</b><span>${fa.ca ? `echtes Alter ${fa.ca}` : ''}${fa.ach ? ` · erreichbar ${de(fa.ach, 1)}` : ''}</span></div>` : ''}</div>
+        ${v2.length > 2 ? `<div class="card"><div class="muted">VO2max-Verlauf</div>${lineChart(v2.map(x => ({t:parse(x.date).getTime(), y:x.v, ds:x.date})), {dec:1})}</div>` : ''}` : ''}
       <h3>Aktivitäten (Garmin)</h3>
-      ${S.g.acts.length ? S.g.acts.slice(0, 30).map(a => `<div class="row"><div class="ic">${ACT_ICON(a.type)}</div><div class="mid"><b>${esc(a.name)}</b><small>${a.start ? fmtDay(a.start.slice(0, 10)) + ', ' + a.start.slice(11, 16) + ' Uhr' : ''}${a.dist ? ` · ${de(a.dist / 1000, 2)} km` : ''}${a.hr ? ` · Ø ${a.hr} bpm` : ''}</small></div><div class="rt"><b>${de(a.kcal)} kcal</b><small>${fmtDur(a.dur)}</small></div></div>`).join('') : '<div class="empty">Noch keine Aktivitäten abgerufen.</div>'}
+      ${S.g.acts.length ? S.g.acts.slice(0, 30).map(a => `<button class="row" data-ga="${a.id}"><div class="ic">${ACT_ICON(a.type)}</div><div class="mid"><b>${esc(a.name)}</b><small>${a.start ? fmtDay(a.start.slice(0, 10)) + ', ' + a.start.slice(11, 16) + ' Uhr' : ''}${a.dist ? ` · ${de(a.dist / 1000, 2)} km` : ''}${a.hr ? ` · Ø ${a.hr} bpm` : ''}</small></div><div class="rt"><b>${de(a.kcal)} kcal</b><small>${fmtDur(a.dur)}</small></div></button>`).join('') : '<div class="empty">Noch keine Aktivitäten abgerufen.</div>'}
       ${sportHtml}
       <p class="muted" style="font-size:12px">${S.g.last ? `Zuletzt abgeglichen: ${new Date(S.g.last).toLocaleString('de-DE', {weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'})} Uhr` : ''}</p>`;
     $('#ac-sync').onclick = () => garminSync(true);
     $('#ac-set').onclick = garminSheet;
     if($('#ac-err')) $('#ac-err').onclick = garminSheet;
+    if($('#h-ready')) $('#h-ready').onclick = readinessSheet;
+    if($('#ac-hr')) wireSeg('ac-hr', v => { S.heartRange = +v; renderAct(); });
+    $$('#act [data-ga]').forEach(b => b.onclick = () => actSheet(S.g.acts.find(a => String(a.id) === b.dataset.ga)));
   }
   $('#ac-add').onclick = () => sportSheet();
   $$('#act [data-sp]').forEach(b => b.onclick = () => sportSheet(S.sport.find(x => x.id === b.dataset.sp)));
@@ -1229,10 +1286,10 @@ function textSheet(meal, keep){
   wireSeg('tx-meal', v => { T.meal = v; });
   const draw = () => {
     const ok = T.items.filter(i => i.food), tot = sumOf(ok.map(i => calcEntry(i.food, i.grams)));
-    $('#tx-res').innerHTML = !T.items.length ? '' : `<h3>Erkannt</h3>${T.items.map((i, k) => i.food ? `<button class="row" data-ti="${k}"><div class="ic">${i.src === 'off' ? '🌍' : '✓'}</div><div class="mid"><b>${esc(i.food.name)}${i.food.brand ? ` (${esc(i.food.brand)})` : ''}</b><small>${de(i.grams)} ${i.food.unit || 'g'} · „${esc(i.it.raw)}“</small></div><div class="rt"><b>${de(calcEntry(i.food, i.grams).kcal)}</b><small>kcal</small></div></button>` : `<button class="row" data-ti="${k}"><div class="ic">❓</div><div class="mid"><b>${esc(i.it.term)}</b><small>${i.busy ? '⏳ suche online…' : 'nicht gefunden – antippen zum Suchen'}</small></div></button>`).join('')}
+    $('#tx-res').innerHTML = !T.items.length ? '' : `<h3>Erkannt</h3>${T.items.map((i, k) => i.food ? `<button class="row" data-ti="${k}"><div class="ic">${i.src === 'off' ? '🌍' : i.src === 'db' ? '📦' : '✓'}</div><div class="mid"><b>${esc(i.food.name)}${i.food.brand ? ` (${esc(i.food.brand)})` : ''}</b><small>${de(i.grams)} ${i.food.unit || 'g'} · „${esc(i.it.raw)}“</small></div><div class="rt"><b>${de(calcEntry(i.food, i.grams).kcal)}</b><small>kcal</small></div></button>` : `<button class="row" data-ti="${k}"><div class="ic">❓</div><div class="mid"><b>${esc(i.it.term)}</b><small>${i.busy ? '⏳ suche online…' : 'nicht gefunden – antippen zum Suchen'}</small></div></button>`).join('')}
       <div class="row" style="justify-content:space-between"><b>Zusammen</b><b>${de(tot.kcal)} kcal</b></div>
       <div class="btns"><button class="btn pri" id="tx-save" ${ok.length ? '' : 'disabled'}>${ok.length} ${ok.length === 1 ? 'Eintrag' : 'Einträge'} speichern</button></div>
-      <p class="muted" style="font-size:12px">Antippen, um etwas zu ändern oder ein anderes Lebensmittel zu wählen. Mit ✓ = aus deinen Lebensmitteln, 🌍 = aus Open Food Facts (bitte prüfen).</p>`;
+      <p class="muted" style="font-size:12px">Antippen, um etwas zu ändern oder ein anderes Lebensmittel zu wählen. ✓ = deine Lebensmittel, 📦 = Datenbank, 🌍 = online (bitte prüfen).</p>`;
     $$('#tx-res [data-ti]').forEach(b => b.onclick = () => { const it = T.items[+b.dataset.ti]; T.text = $('#tx-in').value;
       const back = () => textSheet(null, true);
       if(it.food) amountSheet(it.food, T.meal, null, {pick:(food, g) => { it.food = rememberFood(food); it.grams = g; back(); }, grams:it.grams, del:() => { T.items.splice(T.items.indexOf(it), 1); back(); }, back});
@@ -1244,7 +1301,8 @@ function textSheet(meal, keep){
   };
   const run = async () => {
     T.text = $('#tx-in').value.trim(); if(!T.text){ toast('Bitte eintippen oder sprechen'); return; }
-    T.items = T.text.split(/,|;|\n|\bund\b|\bsowie\b|\bmit\b|\+/i).map(parseItem).filter(Boolean).map(it => { const food = matchFood(it.term); return {it, food, grams:food ? gramsFor(it, food) : 0, src:food ? 'local' : null}; });
+    await fdbLoad();
+    T.items = T.text.split(/,|;|\n|\bund\b|\bsowie\b|\bmit\b|\+/i).map(parseItem).filter(Boolean).map(it => { let food = matchFood(it.term), src = food ? 'local' : null; if(!food){ food = fdbSearch(it.term, 1)[0] || null; if(food) src = 'db'; } return {it, food, grams:food ? gramsFor(it, food) : 0, src}; });
     draw();
     for(const i of T.items.filter(x => !x.food)){ // Unbekanntes online nachschlagen
       i.busy = true; if($('#tx-res')) draw();
@@ -1467,7 +1525,7 @@ function streaks(){
   const t = todayStr(), days = new Set(S.log.map(e => e.date)), wg = waterGoal();
   let d = days.has(t) ? t : addDays(t, -1), log = 0; while(days.has(d)){ log++; d = addDays(d, -1); }
   let g = days.has(t) && inGoal(t) ? t : addDays(t, -1), goal = 0; while(days.has(g) && inGoal(g)){ goal++; g = addDays(g, -1); }
-  let w = (S.water[t] || 0) >= wg ? t : addDays(t, -1), water = 0; while((S.water[w] || 0) >= wg){ water++; w = addDays(w, -1); }
+  let w = waterOf(t) >= waterGoal(t) ? t : addDays(t, -1), water = 0; while(waterOf(w) >= waterGoal(w)){ water++; w = addDays(w, -1); }
   return {log, goal, water};
 }
 const BADGES = [
@@ -1493,13 +1551,16 @@ const BADGES = [
   ['sport', '🏃', 'In Bewegung', 'Erste Sporteinheit', s => S.sport.length >= 1 || S.g.acts.length >= 1],
   ['meas', '📏', 'Maßband', 'Körpermaße eingetragen', s => S.measures.length >= 1],
   ['photo', '📸', 'Vorher-Bild', 'Erstes Fortschrittsfoto', s => S.photos.length >= 1],
+  ['im150', '⚡', 'Aktive Woche', '150 Intensitätsminuten in einer Woche', s => s.bestIm >= 150],
+  ['sleep7', '😴', 'Ausgeschlafen', '7 Nächte in Folge mind. 7 Stunden', s => s.bestSleep >= 7],
+  ['vo2', '🫀', 'Fitter geworden', 'VO2max um 1 Punkt gestiegen', s => s.vo2gain >= 1],
   ['ch30', '🤘', '30 Tage nur Wasser', '30 Tage Nur-Wasser-Challenge', s => s.ch >= 30],
   ['ch100', '🤘', '100 Tage nur Wasser', '100 Tage Nur-Wasser-Challenge', s => s.ch >= 100],
   ['ch', '⛺', 'Ab zum Festival!', 'Nur-Wasser-Challenge geschafft', s => S.ch.on && !S.ch.lost && S.ch.date && todayStr() >= S.ch.date],
 ];
 function badgeStats(){
   const days = S.log.map(e => e.date), ti = trendInfo(), w = curWeight(), gw = S.prof && S.prof.goalWeight, sw = S.weights[0] ? S.weights[0].kg : null;
-  return {bestLog:runs(days), bestGoal:runs(days, inGoal), bestWater:runs(Object.keys(S.water), d => (S.water[d] || 0) >= waterGoal()),
+  return {bestLog:runs(days), bestGoal:runs(days, inGoal), bestWater:runs(Object.keys(S.water).concat(Object.keys(S.g.hyd || {})), d => waterOf(d) >= waterGoal(d)), bestIm:Math.max(0, ...Object.keys(S.g.days).map(weekStart).filter((v, i, a) => a.indexOf(v) === i).map(imWeek)), bestSleep:runs(Object.keys(S.g.sleep || {}), d => (S.g.sleep[d].sec || 0) >= 7 * 3600), vo2gain:(() => { const v = vo2Series(); return v.length > 1 ? v[v.length - 1].v - v[0].v : 0; })(),
     lost:ti ? ti.first - ti.tr : 0, goalReached:!!(gw && w && sw && (sw > gw ? w <= gw : w >= gw) && sw !== gw),
     ch:S.ch.on && !S.ch.lost ? Math.max(0, daysBetween(S.ch.start, todayStr()) + 1) : 0};
 }
@@ -1514,7 +1575,7 @@ let _wT;
 function updateWidget(){
   if(!NATIVE) return; clearTimeout(_wT);
   _wT = setTimeout(() => { const B = plug('FitBridge'); if(!B || !B.setWidget) return; const t = todayStr(), tot = dayTotals(t), g = kcalGoal(t), left = g - tot.kcal;
-    B.setWidget({date:t, value:de(Math.abs(left)), label:left < 0 ? 'kcal zu viel' : 'kcal übrig', sub:`Gegessen ${de(tot.kcal)} · Ziel ${de(g)}`, water:`💧 ${de((S.water[t] || 0) / 1000, 2)} / ${de(waterGoal() / 1000, 1)} l`, goal:de(baseGoal(t)), wgoal:de(waterGoal() / 1000, 1)}).catch(() => {}); }, 600);
+    B.setWidget({date:t, value:de(Math.abs(left)), label:left < 0 ? 'kcal zu viel' : 'kcal übrig', sub:`Gegessen ${de(tot.kcal)} · Ziel ${de(g)}`, water:`💧 ${de(waterOf(t) / 1000, 2)} / ${de(waterGoal(t) / 1000, 1)} l`, goal:de(baseGoal(t)), wgoal:de(waterGoal() / 1000, 1)}).catch(() => {}); }, 600);
 }
 function openDeepLink(url){
   const u = String(url || ''); if(!u.startsWith('fitm://')) return;
@@ -1542,6 +1603,169 @@ function formulaTdee(){
   else{ for(let i = 1; i <= 28; i++) act += manualKcal(addDays(t, -i)); act /= 28; }
   return Math.round(bmr() * (gActive() ? 1.2 : (ACT[p.activity] || ACT.light)[2]) + act);
 }
+
+/* ================= Große Lebensmittel-Datenbank (offline) ================= */
+const FDB_BASE = 'https://raw.githubusercontent.com/MrDocMoris/Fitness-Multiversum/daten/';
+const FDB = {state:'none', rows:null, st:null, gen:[], genSt:[], meta:store('fx_fdb_meta'), loading:null, update:false};
+function idb(){ return new Promise((res, rej) => { const r = indexedDB.open('fitm', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
+async function idbGet(k){ const db = await idb(); return new Promise((res, rej) => { const t = db.transaction('kv').objectStore('kv').get(k); t.onsuccess = () => res(t.result); t.onerror = () => rej(t.error); }); }
+async function idbSet(k, v){ const db = await idb(); return new Promise((res, rej) => { const t = db.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, k); t.oncomplete = () => res(); t.onerror = () => rej(t.error); }); }
+const webFetch = (...a) => (window.CapacitorWebFetch || window.fetch)(...a);
+async function fetchGzText(url, onBytes){
+  if(!('DecompressionStream' in window)) throw new Error('Entpacken wird auf diesem Gerät nicht unterstützt – bitte Android System WebView aktualisieren');
+  const r = await webFetch(url, {cache:'no-store'}); if(!r.ok) throw new Error('Download-Fehler ' + r.status);
+  let got = 0; const counter = new TransformStream({transform(ch, c){ got += ch.byteLength; if(onBytes) onBytes(got); c.enqueue(ch); }});
+  return await new Response(r.body.pipeThrough(counter).pipeThrough(new DecompressionStream('gzip'))).text();
+}
+async function fdbMeta(){
+  const r = await webFetch(FDB_BASE + 'meta.json?t=' + Date.now(), {cache:'no-store'});
+  if(!r.ok) throw new Error(r.status === 404 ? 'Die Datenbank wird gerade noch gebaut – bitte in ca. 30 Minuten nochmal probieren.' : 'Fehler ' + r.status);
+  return r.json();
+}
+async function fdbDownload(onProg){
+  const meta = await fdbMeta(), total = meta.bytes || 1; let done = 0; const texts = [];
+  for(const p of meta.parts){ const base = done; texts.push(await fetchGzText(FDB_BASE + p.file, b => onProg && onProg(Math.min(0.99, (base + b) / total)))); done += p.bytes; }
+  const gen = meta.generic ? await fetchGzText(FDB_BASE + meta.generic) : '';
+  if(onProg) onProg(1);
+  await idbSet('foods', texts.join('')); await idbSet('generic', gen);
+  meta.loadedAt = Date.now(); store('fx_fdb_meta', meta); FDB.meta = meta; FDB.state = 'none'; FDB.rows = null; FDB.update = false;
+  return meta;
+}
+function fdbLoad(){
+  if(FDB.state === 'ready') return Promise.resolve(true);
+  if(FDB.loading) return FDB.loading;
+  if(!FDB.meta) return Promise.resolve(false);
+  FDB.state = 'loading';
+  FDB.loading = (async () => {
+    try{
+      const [txt, gen] = await Promise.all([idbGet('foods'), idbGet('generic')]);
+      if(!txt){ FDB.state = 'none'; return false; }
+      const rows = txt.split('\n'); if(!rows[rows.length - 1]) rows.pop();
+      const st = new Array(rows.length);
+      for(let i = 0; i < rows.length; i++){ const l = rows[i], a = l.indexOf('\t'), b = l.indexOf('\t', a + 1), c = l.indexOf('\t', b + 1); st[i] = normTxt(l.slice(a + 1, c)); if(i % 25000 === 24999) await new Promise(r => setTimeout(r, 0)); }
+      FDB.rows = rows; FDB.st = st;
+      FDB.gen = (gen || '').split('\n').filter(Boolean); FDB.genSt = FDB.gen.map(r => normTxt(r.split('\t')[1]));
+      FDB.state = 'ready'; return true;
+    }catch(e){ console.log('Datenbank:', e); FDB.state = 'error'; return false; }
+    finally{ FDB.loading = null; }
+  })();
+  return FDB.loading;
+}
+function fdbFood(line, gen){
+  const a = line.split('\t'), n = i => a[i] === '' || a[i] == null ? null : +a[i];
+  return {id:gen ? 'ch:' + normTxt(a[1]).replace(/ /g, '-') : 'off:' + a[0], code:gen ? null : a[0], name:a[1], brand:a[2] || '', per100:{kcal:n(3) || 0, p:n(4) || 0, c:n(5) || 0, f:n(6) || 0, sugar:n(7), fiber:n(8), salt:n(9)}, serving:n(10) ? {g:n(10), label:a[11] || 'Portion'} : null, ns:a[12] || null, nova:a[13] ? +a[13] : null, src:gen ? 'ch' : 'off', db:true, generic:!!gen};
+}
+function fdbSearch(q, max = 40){
+  if(FDB.state !== 'ready') return [];
+  const toks = normTxt(q).split(' ').filter(w => w.length > 1).map(stemW); if(!toks.length) return [];
+  const res = [];
+  const scan = (st, rows, gen) => {
+    for(let i = 0; i < st.length; i++){
+      const s = st[i]; let ok = true; for(const t of toks) if(s.indexOf(t) < 0){ ok = false; break; } if(!ok) continue;
+      const w = s.split(' '); let sc = (gen ? 25 : 0) - (i / st.length) * 25 - s.length * 0.06;
+      for(const t of toks) if(w.some(x => x.startsWith(t))) sc += 6;
+      if(w[0] && w[0].startsWith(toks[0])) sc += 5;
+      res.push([sc, rows[i], gen]);
+    }
+  };
+  scan(FDB.genSt, FDB.gen, true); scan(FDB.st, FDB.rows, false);
+  res.sort((a, b) => b[0] - a[0]);
+  return res.slice(0, max).map(([, l, g]) => fdbFood(l, g));
+}
+function fdbBarcode(code){
+  if(FDB.state !== 'ready') return null;
+  const variants = [...new Set([code, code.replace(/^0+/, ''), '0' + code])];
+  for(const v of variants){ const pre = v + '\t'; for(const l of FDB.rows) if(l.startsWith(pre)) return fdbFood(l, false); }
+  return null;
+}
+function fdbSheet(){
+  const m = FDB.meta;
+  openSheet(`<h2>📦 Lebensmittel-Datenbank</h2>
+    <p class="muted" style="margin-top:0">Alle Produkte aus Open Food Facts, die in Deutschland, Österreich und der Schweiz verkauft werden, plus Grundnahrungsmittel aus der Schweizer Nährwertdatenbank. Einmal laden – danach funktionieren Suche und Barcode-Scan <b>ohne Internet</b> und sofort.</p>
+    ${m ? `<div class="kv"><div><span>Produkte</span><b>${de(m.count)}</b><span>+ ${de(m.genericCount || 0)} Grundnahrungsmittel</span></div><div><span>Stand</span><b>${esc(m.date)}</b><span>${FDB.update ? '<b style="color:var(--acc)">Update verfügbar</b>' : FDB.state === 'ready' ? 'geladen ✓' : 'auf dem Handy'}</span></div></div>` : '<div class="hint">📶 <span>Download ca. 15–25 MB – am besten im WLAN.</span></div>'}
+    <div id="fdb-prog" style="display:none"><div class="pbar"><i id="fdb-bar" style="width:0"></i></div><div class="muted" id="fdb-st"></div></div>
+    <div class="btns"><button class="btn pri" id="fdb-go">${m ? '↻ Aktualisieren' : '⬇️ Jetzt laden'}</button>${m ? '<button class="btn del" id="fdb-del">Entfernen</button>' : ''}</div>
+    <p class="muted" style="font-size:11px;margin-top:12px">Quellen: Open Food Facts (Open Database License, openfoodfacts.org) · Schweizer Nährwertdatenbank (BLV, naehrwertdaten.ch). Die Datenbank wird jede Woche automatisch neu gebaut.</p>`);
+  $('#fdb-go').onclick = async () => {
+    const btn = $('#fdb-go'); if(btn.dataset.run) return; btn.dataset.run = 1; btn.textContent = '⏳ Lädt…'; $('#fdb-prog').style.display = '';
+    try{
+      const meta = await fdbDownload(f => { if($('#fdb-bar')){ $('#fdb-bar').style.width = (f * 100).toFixed(1) + '%'; $('#fdb-st').textContent = `${Math.round(f * 100)} %`; } });
+      if($('#fdb-st')) $('#fdb-st').textContent = 'Bereite die Suche vor…';
+      await fdbLoad();
+      toast(`📦 ${de(meta.count)} Produkte offline verfügbar`); if($('#fdb-go')) fdbSheet();
+    }catch(e){ if($('#fdb-st')) $('#fdb-st').textContent = '⚠️ ' + (e.message || e); if($('#fdb-go')){ delete btn.dataset.run; btn.textContent = 'Nochmal versuchen'; } }
+  };
+  if($('#fdb-del')) $('#fdb-del').onclick = async () => { if(!confirmTwice('#fdb-del')) return; await idbSet('foods', ''); await idbSet('generic', ''); localStorage.removeItem('fx_fdb_meta'); FDB.meta = null; FDB.rows = null; FDB.state = 'none'; closeSheet(); toast('Datenbank entfernt'); };
+}
+async function fdbCheckUpdate(){
+  if(!FDB.meta || Date.now() - (FDB.meta.loadedAt || 0) < 6 * 864e5) return;
+  try{ const m = await fdbMeta(); if(m.date > FDB.meta.date) FDB.update = true; }catch(e){}
+}
+const nsBadge = f => f && f.ns ? `<span class="ns ns-${esc(f.ns)}">Nutri-Score ${esc(f.ns.toUpperCase())}</span>` : '';
+
+/* ================= Garmin: Erholung, Wasser, Intensität, Fitness ================= */
+const waterOf = ds => Math.max(S.water[ds] || 0, S.cfg.gWater !== false && gActive() && S.g.hyd[ds] ? (S.g.hyd[ds].ml || 0) : 0);
+const HRV_DE = {BALANCED:'ausgeglichen', UNBALANCED:'unausgeglichen', LOW:'niedrig', POOR:'schlecht', NONE:'noch kein Basiswert'};
+const hrvDe = s => HRV_DE[String(s || '').toUpperCase()] || (s ? String(s).toLowerCase() : '–');
+function avgOf(ds, n, get){ let s = 0, c = 0; for(let i = 1; i <= n; i++){ const v = get(addDays(ds, -i)); if(v != null && !isNaN(v)){ s += v; c++; } } return c ? s / c : null; }
+function readiness(ds){
+  const sl = S.g.sleep[ds], h = S.g.hrv[ds], d = S.g.days[ds] || {}, parts = [];
+  if(sl && sl.sec){ const v = sl.score != null ? sl.score : Math.min(100, sl.sec / 3600 / 8 * 100); parts.push({w:30, v, ic:'😴', t:`Schlaf ${fmtDur(sl.sec)}${sl.score != null ? ` · Wert ${sl.score}` : ''}`}); }
+  if(h && h.last){
+    let v = 70; if(h.lo && h.hi) v = h.last >= h.lo ? (h.last <= h.hi * 1.2 ? 92 : 78) : Math.max(15, 70 - (h.lo - h.last) * 5);
+    if(/LOW|POOR/i.test(h.status)) v = Math.min(v, 40); else if(/^UNBALANCED/i.test(h.status)) v = Math.min(v, 62);
+    parts.push({w:30, v, ic:'💓', t:`HRV ${h.last} ms · ${hrvDe(h.status)}`});
+  }
+  if(d.bbMax != null) parts.push({w:25, v:d.bbMax, ic:'🔋', t:`Body Battery bis ${d.bbMax}`});
+  if(d.rhr){ const avg = avgOf(ds, 14, x => (S.g.days[x] || {}).rhr); if(avg){ const diff = d.rhr - avg; parts.push({w:15, v:Math.max(15, Math.min(100, 85 - diff * 8)), ic:'❤️', t:`Ruhepuls ${d.rhr} (${diff > 0 ? '+' : ''}${de(diff, 0)} zum Schnitt)`}); } }
+  if(parts.length < 2) return null;
+  const W = parts.reduce((s, p) => s + p.w, 0), score = Math.round(parts.reduce((s, p) => s + p.v * p.w, 0) / W);
+  return {score, parts, level:score >= 70 ? 'good' : score >= 45 ? 'mid' : 'low'};
+}
+const READY_TXT = {good:['🟢', 'Gut erholt', 'Guter Tag für intensives Training oder eine längere Einheit.'], mid:['🟡', 'Mittel erholt', 'Lockeres bis moderates Training passt – nicht ans Limit gehen.'], low:['🔴', 'Wenig erholt', 'Heute lieber Spaziergang, Dehnen oder Pause – dein Körper braucht Erholung.']};
+function readinessCard(ds){
+  const r = readiness(ds); if(!r) return '';
+  const [ic, title, tip] = READY_TXT[r.level];
+  return `<button class="card" id="h-ready" style="width:100%;text-align:left;display:block;color:inherit;font:inherit"><div style="display:flex;align-items:center;gap:12px"><div class="rdy rdy-${r.level}">${r.score}</div><div style="flex:1;min-width:0"><b>${ic} Morgen-Check: ${title}</b><div class="muted" style="font-size:13px">${tip}</div></div></div>
+    <div class="chips" style="margin-top:8px">${r.parts.map(p => `<span class="chip" style="font-size:11px;padding:4px 9px">${p.ic} ${esc(p.t)}</span>`).join('')}</div></button>`;
+}
+function readinessSheet(){
+  const t = todayStr(), r = readiness(t), days = Array.from({length:14}, (_, i) => addDays(t, i - 13));
+  const items = days.map(ds => { const x = readiness(ds); return {v:x ? x.score : 0, l:WD[parse(ds).getDay()], cur:ds === t, cls:x ? (x.level === 'good' ? 'ok' : x.level === 'low' ? 'over' : '') : ''}; });
+  openSheet(`<h2>💓 Morgen-Check</h2>
+    ${r ? `<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><div class="rdy rdy-${r.level}">${r.score}</div><div><b>${READY_TXT[r.level][1]}</b><div class="muted">${READY_TXT[r.level][2]}</div></div></div>${r.parts.map(p => `<div class="row"><div class="ic">${p.ic}</div><div class="mid"><b>${esc(p.t)}</b><small>Gewicht ${p.w} % · Teilwert ${Math.round(p.v)}</small></div></div>`).join('')}` : '<div class="empty">Für heute fehlen noch Schlaf-/HRV-Daten – Uhr nachts tragen und abgleichen.</div>'}
+    <h3>Letzte 14 Tage</h3><div class="card">${barsHtml(items)}</div>
+    <p class="muted" style="font-size:12px">Eigene Einschätzung aus Schlaf, nächtlicher HRV (gegen deinen Basiswert), Body Battery und Ruhepuls (gegen deinen 14-Tage-Schnitt). Garmins „Trainingsbereitschaft“ gibt die Personal API leider nicht heraus.</p>`);
+}
+const weekStart = ds => { const d = parse(ds), wd = (d.getDay() + 6) % 7; return addDays(ds, -wd); };
+const imGoal = () => { const k = Object.keys(S.g.days).sort().reverse().find(d => S.g.days[d].imGoal); return k ? S.g.days[k].imGoal : 150; };
+const imWeek = ws => Array.from({length:7}, (_, i) => (S.g.days[addDays(ws, i)] || {}).im || 0).reduce((a, b) => a + b, 0);
+function imStreak(){ const t = todayStr(), g = imGoal(); let ws = addDays(weekStart(t), -7), n = 0; while(imWeek(ws) >= g && n < 200){ n++; ws = addDays(ws, -7); } if(imWeek(weekStart(t)) >= g) n++; return n; }
+const TE = v => v == null ? '–' : v < 1 ? 'kein Effekt' : v < 2 ? 'gering' : v < 3 ? 'erhaltend' : v < 4 ? 'verbessernd' : v < 5 ? 'stark verbessernd' : 'überlastend';
+const ZONE_COL = ['#9c95c8', '#66e0ff', '#3fd68a', '#ffb13d', '#ff5c6c'];
+function actSheet(a){
+  const z = a.z || [], zt = z.reduce((s, x) => s + x, 0), run = /run|walk|hik/.test(a.type || '');
+  const pace = a.spd ? (run ? (() => { const s = 1000 / a.spd; return `${Math.floor(s / 60)}:${pad2(Math.round(s % 60))} min/km`; })() : `${de(a.spd * 3.6, 1)} km/h`) : null;
+  openSheet(`<h2>${ACT_ICON(a.type)} ${esc(a.name)}</h2><div class="muted" style="margin-top:-6px">${a.start ? fmtDay(a.start.slice(0, 10)) + ', ' + a.start.slice(11, 16) + ' Uhr' : ''}</div>
+    <div class="kv three"><div><span>Dauer</span><b>${fmtDur(a.dur)}</b></div><div><span>Kalorien</span><b>${de(a.kcal)}</b><span>kcal</span></div>${a.dist ? `<div><span>Strecke</span><b>${de(a.dist / 1000, 2)}</b><span>km</span></div>` : `<div><span>Schritte</span><b>${a.steps ? de(a.steps) : '–'}</b></div>`}
+      ${pace ? `<div><span>${run ? 'Tempo' : 'Ø Geschw.'}</span><b>${pace}</b></div>` : ''}${a.hr ? `<div><span>Puls Ø / max</span><b>${a.hr}${a.maxHr ? ' / ' + a.maxHr : ''}</b><span>bpm</span></div>` : ''}${a.elev ? `<div><span>Höhenmeter</span><b>${de(a.elev)}</b><span>m</span></div>` : ''}${a.load ? `<div><span>Trainingslast</span><b>${de(a.load)}</b></div>` : ''}${a.vo2 ? `<div><span>VO2max</span><b>${a.vo2}</b></div>` : ''}</div>
+    ${a.ae != null || a.an != null ? `<h3>Trainingseffekt</h3><div class="kv"><div><span>Aerob (Ausdauer)</span><b>${a.ae != null ? de(a.ae, 1) : '–'}</b><span>${TE(a.ae)}</span></div><div><span>Anaerob (Tempo/Kraft)</span><b>${a.an != null ? de(a.an, 1) : '–'}</b><span>${TE(a.an)}</span></div></div>` : ''}
+    ${zt ? `<h3>Puls-Zonen</h3><div class="zbar">${z.map((s, i) => s ? `<i style="flex:${s};background:${ZONE_COL[i]}"></i>` : '').join('')}</div>${z.map((s, i) => `<div class="zrow"><i style="background:${ZONE_COL[i]}"></i><span>Zone ${i + 1} · ${['Aufwärmen', 'Leicht', 'Aerob', 'Schwelle', 'Maximum'][i]}</span><b>${fmtDur(s)}</b><small>${Math.round(s / zt * 100)} %</small></div>`).join('')}` : ''}`);
+}
+function sleepBars(nights){
+  const mx = Math.max(9 * 3600, ...nights.map(n => n.s ? n.s.sec + (n.s.awake || 0) : 0));
+  return `<div class="bars">${nights.map(n => { const s = n.s; if(!s) return `<div class="b"><small>${n.l}</small></div>`; const light = s.light != null ? s.light : Math.max(0, s.sec - (s.deep || 0) - (s.rem || 0));
+    return `<div class="b ${n.cur ? 'cur' : ''}"><div class="stack" style="height:${(s.sec + (s.awake || 0)) / mx * 86}%">${[[s.awake, '#ff8fb1'], [s.rem, '#a78bff'], [light, '#66e0ff'], [s.deep, '#3e5bff']].map(([v, c]) => v ? `<i style="flex:${v};background:${c}"></i>` : '').join('')}</div><small>${n.l}</small></div>`; }).join('')}</div>
+    <div class="legend"><span><i style="background:#3e5bff"></i>Tief</span><span><i style="background:#66e0ff"></i>Leicht</span><span><i style="background:#a78bff"></i>REM</span><span><i style="background:#ff8fb1"></i>Wach</span></div>`;
+}
+function sleepFoodLink(){
+  const t = todayStr(), short = [], ok = [];
+  for(let i = 1; i <= 90; i++){ const ds = addDays(t, -i), s = S.g.sleep[ds], k = dayTotals(ds).kcal; if(!s || !s.sec || !entriesOf(ds).length || k < 600) continue; if(s.sec < 6.5 * 3600) short.push(k); else if(s.sec >= 7 * 3600) ok.push(k); }
+  if(short.length < 3 || ok.length < 3) return null;
+  const a = short.reduce((x, y) => x + y, 0) / short.length, b = ok.reduce((x, y) => x + y, 0) / ok.length;
+  return {diff:a - b, nShort:short.length, nOk:ok.length};
+}
+function vo2Series(){ const by = {}; Object.values(S.g.vo2 || {}).forEach(x => { const k = x.date; if(!by[k] || x.sport === 'generic' || x.sport === 'running') by[k] = x; }); return Object.values(by).sort((a, b) => a.date.localeCompare(b.date)); }
 
 /* ================= Navigation ================= */
 function showView(v){
@@ -1571,6 +1795,7 @@ $('#gear').onclick = () => {
     <h3>Verbindungen</h3>
     <div class="set-row"><div>⌚ Garmin<div class="muted">${gActive() ? (S.g.err ? 'Problem – antippen' : 'verbunden') : 'nicht verbunden'}</div></div><button class="chip" id="s-g">${gActive() ? 'Verwalten' : 'Verbinden'}</button></div>
     <div class="set-row"><div>🍏 Yazio<div class="muted">Tagebuch & Gewicht übernehmen</div></div><button class="chip" id="s-yz">Importieren</button></div>
+    <div class="set-row"><div>📦 Lebensmittel-Datenbank<div class="muted">${FDB.meta ? `${de(FDB.meta.count)} Produkte · Stand ${esc(FDB.meta.date)}${FDB.update ? ' · <b style="color:var(--acc)">Update verfügbar</b>' : ''}` : 'offline suchen & scannen'}</div></div><button class="chip" id="s-fdb">${FDB.meta ? 'Verwalten' : 'Laden'}</button></div>
     <h3>Erinnerungen</h3>
     <div class="sw"><div>Push-Benachrichtigungen<div class="muted" id="s-notinfo"></div></div><button class="tog${c.notify ? ' on' : ''}" id="s-not"></button></div>
     <div class="sw"><div>Mahlzeiten-Erinnerung<div class="muted">nur wenn die Mahlzeit noch leer ist</div></div><button class="tog${c.mealRemind ? ' on' : ''}" id="s-meal"></button></div>
@@ -1586,7 +1811,7 @@ $('#gear').onclick = () => {
     <p class="muted" style="font-size:12px;margin-top:12px">🔒 Alle Daten bleiben auf deinem Handy (plus Sicherung in <i>Dokumente/Fitness-Multiversum</i>). Lebensmittel-Suche über Open Food Facts, Aktivität über die offizielle Garmin Personal API.<br>Die Kalorien-Ziele sind Richtwerte, keine medizinische Beratung.</p>`);
   const grab = () => { c.name = $('#s-name').value.trim(); c.mealTimes = {breakfast:$('#s-tb').value || '09:30', lunch:$('#s-tl').value || '13:30', dinner:$('#s-td').value || '19:30'}; c.weighAt = $('#s-tw').value || '07:30'; c.glass = Math.max(50, parseInt($('#s-glass').value, 10) || 250); saveCfg(); renderAll(); };
   ['#s-name', '#s-tb', '#s-tl', '#s-td', '#s-tw', '#s-glass'].forEach(s => $(s).onchange = grab);
-  $('#s-goal').onclick = goalSheet; $('#s-foods').onclick = myFoodsSheet; $('#s-dish').onclick = () => dishesSheet(mealForNow()); $('#s-ch').onclick = challengeSheet; $('#s-fast').onclick = fastSheet; $('#s-g').onclick = garminSheet; $('#s-yz').onclick = yazioSheet;
+  $('#s-goal').onclick = goalSheet; $('#s-foods').onclick = myFoodsSheet; $('#s-dish').onclick = () => dishesSheet(mealForNow()); $('#s-ch').onclick = challengeSheet; $('#s-fast').onclick = fastSheet; $('#s-g').onclick = garminSheet; $('#s-yz').onclick = yazioSheet; $('#s-fdb').onclick = fdbSheet;
   $('#s-not').onclick = async e => { c.notify = !c.notify; e.currentTarget.classList.toggle('on', c.notify); if(c.notify) await askNotify(true); saveCfg(); renderNotifyInfo(); };
   [['#s-meal', 'mealRemind'], ['#s-weigh', 'weighRemind'], ['#s-water', 'waterRemind']].forEach(([id, k]) => $(id).onclick = e => { c[k] = !c[k]; e.currentTarget.classList.toggle('on', c[k]); saveCfg(); if(c[k]) askNotify(false); });
   $('#s-bkn').onclick = () => writeBackup(true);
@@ -1685,7 +1910,7 @@ async function doSchedule(){
       if(S.cfg.weighRemind){ if(i === 0 && S.weights.some(w => w.date === ds)) continue; const at = atTime(ds, S.cfg.weighAt); if(at > now) list.push({id:hashId('weigh' + ds), title:'⚖️ Guten Morgen!', body:'Zeit fürs Wiegen – am besten vor dem Frühstück.', schedule:{at, allowWhileIdle:true}}); }
     }
     if(S.fast.active){ const at = new Date(S.fast.active.start + S.fast.active.h * 3600e3); if(at > now) list.push({id:hashId('fast' + S.fast.active.start), title:'⏱️ Fasten-Ziel geschafft!', body:`${S.fast.active.h} Stunden – du darfst wieder essen 🎉`, schedule:{at, allowWhileIdle:true}}); }
-    if(S.cfg.waterRemind){ for(let i = 0; i < 5; i++){ const ds = addDays(t, i); if(i === 0 && (S.water[ds] || 0) >= waterGoal()) continue; [10, 12, 14, 16, 18, 20].forEach(hh => { const at = atTime(ds, pad2(hh) + ':00'); if(at > now) list.push({id:hashId('water' + ds + hh), title:'💧 Zeit für ein Glas Wasser', body:i === 0 ? `Bisher ${de((S.water[ds] || 0) / 1000, 2)} von ${de(waterGoal() / 1000, 1)} l` : 'Ein Glas Wasser zwischendurch 🙂', schedule:{at, allowWhileIdle:true}}); }); } }
+    if(S.cfg.waterRemind){ for(let i = 0; i < 5; i++){ const ds = addDays(t, i); if(i === 0 && waterOf(ds) >= waterGoal(ds)) continue; [10, 12, 14, 16, 18, 20].forEach(hh => { const at = atTime(ds, pad2(hh) + ':00'); if(at > now) list.push({id:hashId('water' + ds + hh), title:'💧 Zeit für ein Glas Wasser', body:i === 0 ? `Bisher ${de(waterOf(ds) / 1000, 2)} von ${de(waterGoal(ds) / 1000, 1)} l` : 'Ein Glas Wasser zwischendurch 🙂', schedule:{at, allowWhileIdle:true}}); }); } }
     list.sort((a, b) => a.schedule.at - b.schedule.at);
     if(list.length) await LN.schedule({notifications:list.slice(0, 60)});
   }catch(e){ console.log('Erinnerungen:', e); }
@@ -1707,6 +1932,7 @@ S.day = todayStr();
 showView('home');
 if(!S.prof) setTimeout(goalSheet, 500);
 badgeCheck();
+setTimeout(fdbCheckUpdate, 8000);
 if(NATIVE){ askNotify(false); scheduleReminders(); setTimeout(() => checkUpdate(false), 1500); if(gActive() && Date.now() - (S.g.last || 0) > 30 * 60e3) setTimeout(() => garminSync(false), 1200); if(!store('fx_lastbk') || Date.now() - store('fx_lastbk') > 864e5) setTimeout(() => writeBackup(false), 4000); }
 </script>
 </body>

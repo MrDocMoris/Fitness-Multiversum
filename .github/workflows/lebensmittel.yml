@@ -1,0 +1,48 @@
+name: Lebensmittel-Datenbank bauen
+
+# Baut jede Woche die Offline-Datenbank (Open Food Facts DACH + Schweizer Nährwertdatenbank)
+# und legt sie im Zweig "daten" ab. Die App lädt sie von raw.githubusercontent.com.
+on:
+  schedule:
+    - cron: '17 3 * * 0'
+  push:
+    branches: [main]
+    paths:
+      - tools/build_food_db.py
+      - .github/workflows/lebensmittel.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: lebensmittel
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Datenbank bauen
+        run: |
+          pip install --quiet openpyxl
+          python tools/build_food_db.py --out out --max 300000
+          ls -la out
+
+      - name: Im Zweig "daten" veröffentlichen
+        run: |
+          cd out
+          git init -q -b daten
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          printf '# Lebensmittel-Datenbank für Fitness-Multiversum\n\nWird jede Woche automatisch neu gebaut.\n\nQuellen: Open Food Facts (Open Database License, openfoodfacts.org) und Schweizer Nährwertdatenbank (BLV, naehrwertdaten.ch).\n' > README.md
+          git add -A
+          git commit -q -m "Lebensmittel-Datenbank $(date +%F)"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" daten
