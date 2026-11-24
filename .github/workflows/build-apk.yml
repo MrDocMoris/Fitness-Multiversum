@@ -6,6 +6,7 @@ on:
     paths:
       - fitness.html
       - assets/icon.svg
+      - native/**
       - .github/workflows/build-apk.yml
   workflow_dispatch:
 
@@ -65,6 +66,10 @@ jobs:
           M=android/app/src/main/AndroidManifest.xml
           sed -i 's#<application#<uses-permission android:name="android.permission.CAMERA" />\n    <uses-feature android:name="android.hardware.camera" android:required="false" />\n    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />\n    <application android:requestLegacyExternalStorage="true"#' $M
           grep -q SCHEDULE_EXACT_ALARM $M && grep -q permission.CAMERA $M && grep -q requestLegacyExternalStorage $M
+          # Widget, Texterkennung (ML Kit) und Link fitm:// zum Öffnen aus dem Widget
+          sed -i 's#</application>#    <meta-data android:name="com.google.mlkit.vision.DEPENDENCIES" android:value="ocr" />\n        <receiver android:name=".FitWidget" android:exported="true" android:label="Fitness-Multiversum"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/fit_widget_info" /></receiver>\n    </application>#' $M
+          sed -i '0,/<\/activity>/s#</activity>#    <intent-filter><action android:name="android.intent.action.VIEW" /><category android:name="android.intent.category.DEFAULT" /><category android:name="android.intent.category.BROWSABLE" /><data android:scheme="fitm" /></intent-filter>\n        </activity>#' $M
+          grep -q FitWidget $M && grep -q 'scheme="fitm"' $M
           sed -i 's/versionCode 1$/versionCode ${{ github.run_number }}/; s/versionName "1.0"/versionName "1.${{ github.run_number }}"/' android/app/build.gradle
           # Immer mit dem festen Schlüssel aus dem Repo signieren (sonst scheitern Updates)
           cat >> android/app/build.gradle << 'GRADLE'
@@ -81,6 +86,33 @@ jobs:
               buildTypes {
                   debug { signingConfig signingConfigs.fitness }
               }
+          }
+          GRADLE
+          # Eigene Bausteine: Widget + Spracheingabe (FitBridge), Texterkennung (MlText)
+          J=android/app/src/main/java/de/mrdocmoris/fitness
+          cp ../native/*.java $J/
+          cp -r ../native/res/. android/app/src/main/res/
+          cat > $J/MainActivity.java << 'JAVA'
+          package de.mrdocmoris.fitness;
+
+          import android.os.Bundle;
+          import com.getcapacitor.BridgeActivity;
+
+          public class MainActivity extends BridgeActivity {
+              @Override
+              public void onCreate(Bundle savedInstanceState) {
+                  registerPlugin(MlTextPlugin.class);
+                  registerPlugin(FitBridgePlugin.class);
+                  super.onCreate(savedInstanceState);
+              }
+          }
+          JAVA
+          sed -i 's/^          //' $J/MainActivity.java
+          cat >> android/app/build.gradle << 'GRADLE'
+
+          dependencies {
+              // Texterkennung: Modell kommt über die Google-Play-Dienste (hält die APK klein)
+              implementation 'com.google.android.gms:play-services-mlkit-text-recognition:19.0.1'
           }
           GRADLE
 

@@ -13,7 +13,19 @@ Deine eigene Ernährungs- und Fitness-App, ähnlich wie Yazio, aber nur für dic
 - **Garmin** (offizielle Personal API): Schritte, Aktiv- und Gesamtkalorien, Ruhepuls, Body Battery, Stress, Schlaf, Gewicht (Garmin-Waage) und Aktivitäten. Sport-Kalorien werden dem Tagesziel gutgeschrieben (0/50/100 %). Automatischer Abgleich beim Öffnen (höchstens alle 30 Minuten)
 - **Yazio-Import**: Ernährungstagebuch (Lebensmittel, Mengen, Mahlzeiten) und Gewicht aus Yazio übernehmen, bis zu 2 Jahre zurück; doppelte Einträge werden übersprungen
 - **Auswertung**: Kalorien pro Tag gegen das Ziel, Tage im Ziel, Kalorienbilanz mit rechnerischem Fettverlust, Durchschnitt der Nährstoffe, Gewicht, Schritte, größte Kalorienquellen
-- **Erinnerungen** (optional): Mahlzeiten (nur wenn noch leer) und morgens wiegen
+- **Eigene Gerichte & Rezepte**: Zutaten zusammenstellen, Portionen und Gewicht des fertigen Topfs angeben, mit einem Tipp eintragen. Eine Mahlzeit lässt sich direkt „als Gericht speichern“
+- **Nährwert-Etikett abfotografieren**: Texterkennung (Google ML Kit, direkt auf dem Handy) liest kcal, Eiweiß, Kohlenhydrate, Fett, Zucker, Ballaststoffe und Salz und legt das Lebensmittel an
+- **Schnell per Text oder Sprache**: „200 g Hähnchen, 150 g Reis, 2 Eier“ wird erkannt, Unbekanntes wird in Open Food Facts nachgeschlagen, alles in einem Rutsch eintragen
+- **Intervallfasten-Timer** (14:10 bis 24 h) mit Fortschritt, Push am Ende und Verlauf
+- **Gewichts-Trend**: geglättete Trendlinie, kg pro Woche und voraussichtliche Wochen bis zum Zielgewicht
+- **Lernendes Kalorienziel**: Aus 4 Wochen Tagebuch und Gewichtstrend rechnet die App deinen echten Verbrauch aus und nutzt ihn auf Wunsch als Ziel
+- **Zucker, Ballaststoffe, Salz** pro Tag mit Richtwerten
+- **Sport ohne Garmin eintragen** (12 Sportarten, Kalorien geschätzt nach MET und Gewicht)
+- **Startbildschirm-Widget**: kcal übrig, Gegessen/Ziel, Wasser, Knöpfe „+ Essen“ und „💧 +1 Glas“
+- **Nur-Wasser-Zähler** mit Countdown bis Rock am Ring: Feiertage (NRW) und Geburtstage zählen als Ausnahme, die App fragt nach, wenn ein Softdrink, Saft oder Alkohol eingetragen wird
+- **Körpermaße** (Bauch, Hüfte, Brust, Oberarm, Oberschenkel, Hals) und **Fortschrittsfotos** mit Vorher-nachher-Vergleich (bleiben privat in der App)
+- **Serien & Abzeichen**: Tage in Folge eingetragen, im Ziel, Wasser-Ziel; 25 Abzeichen
+- **Erinnerungen** (optional): Mahlzeiten (nur wenn noch leer), morgens wiegen, Wasser alle 2 Stunden
 - Automatische Sicherung in *Dokumente/Fitness-Multiversum*, Kopieren/Einfügen, Update-Prüfung
 
 ## Garmin einrichten
@@ -32,4 +44,5 @@ Kein eigener Server. Alle Daten liegen nur auf deinem Handy (und in der Sicherun
 ## Aufbau
 - `fitness.html`: die komplette App (HTML/CSS/JS), läuft zum Testen auch im Browser (Garmin und Yazio dort nicht, weil die Server Browser-Anfragen blockieren)
 - `assets/icon.svg`: App-Icon
+- `native/`: eigene Android-Bausteine (Widget, Spracheingabe, Texterkennung mit ML Kit)
 - `.github/workflows/build-apk.yml`: baut bei jeder Änderung die Android-App (Capacitor 7, natives HTTP für Garmin/Yazio/Open Food Facts, ZXing als Barcode-Ersatz), signiert sie mit `signing/debug.keystore` (wird beim ersten Lauf angelegt), veröffentlicht sie als Release und schreibt `app/version.json`

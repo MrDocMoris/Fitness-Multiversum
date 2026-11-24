@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/w_root" android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:padding="14dp" android:background="@drawable/fit_widget_bg">
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:text="Fitness-Multiversum" android:textColor="#B9B3E6" android:textSize="12sp" android:textStyle="bold" />
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="bottom" android:layout_marginTop="4dp">
+        <TextView android:id="@+id/w_value" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="–" android:textColor="#FFFFFF" android:textSize="28sp" android:textStyle="bold" />
+        <TextView android:id="@+id/w_label" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginLeft="6dp" android:layout_marginBottom="5dp" android:text="kcal übrig" android:textColor="#8FE3FF" android:textSize="13sp" />
+    </LinearLayout>
+    <TextView android:id="@+id/w_sub" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:textColor="#B9B3E6" android:textSize="12sp" />
+    <TextView android:id="@+id/w_water" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:textColor="#8FE3FF" android:textSize="12sp" />
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="8dp">
+        <TextView android:id="@+id/w_add" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:gravity="center"
+            android:text="＋ Essen" android:textColor="#0B0A1A" android:textSize="13sp" android:textStyle="bold"
+            android:background="@drawable/fit_widget_btn" android:paddingTop="5dp" android:paddingBottom="5dp" />
+        <TextView android:id="@+id/w_drink" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:gravity="center" android:layout_marginLeft="8dp"
+            android:text="💧 +1 Glas" android:textColor="#0B0A1A" android:textSize="13sp" android:textStyle="bold"
+            android:background="@drawable/fit_widget_btn" android:paddingTop="5dp" android:paddingBottom="5dp" />
+    </LinearLayout>
+</LinearLayout>
