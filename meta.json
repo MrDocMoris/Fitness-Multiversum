@@ -1,0 +1,42 @@
+{
+ "date": "2026-11-24",
+ "cols": [
+  "code",
+  "name",
+  "brand",
+  "kcal",
+  "p",
+  "c",
+  "f",
+  "sugar",
+  "fiber",
+  "salt",
+  "sg",
+  "sl",
+  "ns",
+  "nova",
+  "rank"
+ ],
+ "parts": [
+  {
+   "file": "foods-1.tsv.gz",
+   "bytes": 4382868
+  },
+  {
+   "file": "foods-2.tsv.gz",
+   "bytes": 4291420
+  },
+  {
+   "file": "foods-3.tsv.gz",
+   "bytes": 2193895
+  }
+ ],
+ "count": 300000,
+ "generic": "generic.tsv.gz",
+ "genericCount": 1109,
+ "sources": [
+  "Open Food Facts (ODbL) – openfoodfacts.org",
+  "Schweizer Nährwertdatenbank (BLV) – naehrwertdaten.ch"
+ ],
+ "bytes": 10891466
+}
