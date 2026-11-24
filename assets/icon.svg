@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+<defs>
+  <radialGradient id="bg" cx="50%" cy="42%" r="72%"><stop offset="0" stop-color="#2b1c78"/><stop offset=".5" stop-color="#140d3a"/><stop offset="1" stop-color="#07061a"/></radialGradient>
+  <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#66e0ff"/><stop offset=".5" stop-color="#9b7bff"/><stop offset="1" stop-color="#ff5ec8"/></linearGradient>
+  <linearGradient id="apple" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7dffb5"/><stop offset=".55" stop-color="#3fd68a"/><stop offset="1" stop-color="#1a9a68"/></linearGradient>
+  <linearGradient id="flame" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ff9d3d"/><stop offset="1" stop-color="#ffe29a"/></linearGradient>
+  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="22"/></filter>
+  <filter id="g2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="9"/></filter>
+</defs>
+<rect width="1024" height="1024" fill="url(#bg)"/>
+<g fill="#fff">
+  <circle cx="160" cy="190" r="4" opacity=".7"/><circle cx="860" cy="150" r="3" opacity=".6"/><circle cx="900" cy="600" r="4" opacity=".55"/>
+  <circle cx="120" cy="680" r="3" opacity=".6"/><circle cx="300" cy="920" r="4" opacity=".5"/><circle cx="790" cy="900" r="3" opacity=".6"/>
+  <circle cx="520" cy="96" r="3" opacity=".5"/><circle cx="70" cy="420" r="2.5" opacity=".6"/>
+</g>
+<!-- Fortschrittsring wie in der App -->
+<circle cx="512" cy="520" r="330" fill="none" stroke="#2a2360" stroke-width="40"/>
+<circle cx="512" cy="520" r="330" fill="none" stroke="url(#ring)" stroke-width="40" stroke-linecap="round" stroke-dasharray="1555 2073" transform="rotate(-90 512 520)"/>
+<circle cx="512" cy="520" r="250" fill="#3fd68a" opacity=".35" filter="url(#glow)"/>
+<!-- Apfel -->
+<path d="M512 360c-40-34-110-44-160-14-74 44-84 160-44 250 34 78 92 144 150 144 22 0 34-10 54-10s32 10 54 10c58 0 116-66 150-144 40-90 30-206-44-250-50-30-120-20-160 14z" fill="url(#apple)"/>
+<path d="M470 420c-50 6-90 50-90 110" fill="none" stroke="#e9fff3" stroke-width="22" stroke-linecap="round" opacity=".55"/>
+<path d="M512 362c0-50 20-92 60-118" fill="none" stroke="#8a5a2b" stroke-width="22" stroke-linecap="round"/>
+<path d="M540 300c40-46 110-52 140-30-30 46-94 60-140 30z" fill="#7dffb5"/>
+<!-- Flamme (Kalorien) -->
+<g transform="translate(700 690)">
+  <path d="M0-120c40 50 90 90 90 150a90 90 0 0 1-180 0c0-40 30-60 40-100 20 20 30 36 30 56 20-30 30-66 20-106z" fill="url(#flame)" filter="url(#g2)" opacity=".8"/>
+  <path d="M0-120c40 50 90 90 90 150a90 90 0 0 1-180 0c0-40 30-60 40-100 20 20 30 36 30 56 20-30 30-66 20-106z" fill="url(#flame)"/>
+</g>
+<circle cx="150" cy="560" r="30" fill="#7fe3ff"/>
+<circle cx="880" cy="380" r="26" fill="#ff5ec8"/>
+</svg>

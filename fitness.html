@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0a1a">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Fitness-Multiversum – Ernährung & Aktivität</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="capacitor.js" onerror="this.remove()"></script>
+<script src="zxing.js" onerror="this.remove()"></script>
+<style>
+:root{
+  --bg:#0b0a1a; --panel:#15122c; --panel2:#201c3f; --line:#2f2a58; --text:#efecff; --mute:#9c95c8;
+  --grad:linear-gradient(120deg,#6fe3ff 0%,#a78bff 55%,#e59bff 100%); --glow:0 0 18px rgba(130,110,255,.45);
+  --acc:#7fe3ff; --ok:#3fd68a; --bad:#ff5c6c; --warn:#ffb13d;
+  --cp:#66e0ff; --cc:#ffcf6b; --cf:#ff5ec8;
+  --safe-b:env(safe-area-inset-bottom,0px); --safe-t:env(safe-area-inset-top,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:15px/1.4 "Space Grotesk",system-ui,sans-serif}
+body{background:radial-gradient(ellipse 120% 60% at 50% -10%,rgba(98,70,230,.35),transparent 60%),radial-gradient(ellipse 80% 50% at 100% 100%,rgba(70,200,255,.10),transparent 60%),var(--bg);background-attachment:fixed}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.55;background-image:radial-gradient(1px 1px at 12% 18%,#fff,transparent),radial-gradient(1px 1px at 78% 12%,#fff,transparent),radial-gradient(1.5px 1.5px at 34% 72%,#cfc6ff,transparent),radial-gradient(1px 1px at 88% 64%,#fff,transparent),radial-gradient(1px 1px at 55% 38%,#bfefff,transparent),radial-gradient(1.5px 1.5px at 6% 88%,#fff,transparent),radial-gradient(1px 1px at 66% 90%,#fff,transparent),radial-gradient(1px 1px at 22% 46%,#fff,transparent),radial-gradient(1px 1px at 93% 32%,#e3d9ff,transparent),radial-gradient(1px 1px at 44% 8%,#fff,transparent)}
+button,select,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+.app{display:flex;flex-direction:column;height:100%}
+main{flex:1;position:relative;overflow:hidden}
+.view{position:absolute;inset:0;display:none;overflow-y:auto}
+.view.on{display:block}
+.pad{padding:calc(14px + var(--safe-t)) 14px 100px}
+nav{display:flex;background:rgba(17,14,38,.92);backdrop-filter:blur(10px);border-top:1px solid transparent;border-image:var(--grad) 1;padding-bottom:var(--safe-b);position:relative;z-index:5}
+nav button{flex:1;min-width:0;padding:10px 0 8px;color:var(--mute);font-size:11px;white-space:nowrap;display:flex;flex-direction:column;align-items:center;gap:2px;position:relative}
+nav button svg{width:22px;height:22px}
+nav button.on{color:var(--acc);text-shadow:0 0 12px rgba(127,227,255,.6)}
+nav button.on svg{filter:drop-shadow(0 0 6px rgba(127,227,255,.7))}
+h1{font-size:24px;margin:0;background:linear-gradient(90deg,#ffffff,#c9bcff 60%,#8fe8ff);-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:.01em}
+h2{font-size:19px;margin:0 0 10px}
+h3{font-size:13px;text-transform:uppercase;letter-spacing:.12em;color:var(--mute);margin:18px 0 8px;font-weight:500}
+.muted{color:var(--mute);font-size:13px}
+.empty{color:var(--mute);text-align:center;padding:18px 10px;font-size:14px}
+.hero{display:flex;align-items:center;gap:14px;margin:6px 0 12px}
+.hlogo{width:62px;height:62px;border-radius:17px;box-shadow:0 0 24px rgba(130,110,255,.55),0 0 0 1px rgba(167,139,255,.5);animation:hfloat 5s ease-in-out infinite;flex:none}
+@keyframes hfloat{50%{transform:translateY(-4px) rotate(-2deg)}}
+.hero .sub{color:var(--mute);font-size:13px;margin-top:2px}
+.gearbtn{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--panel2);border:1px solid var(--line);color:var(--acc);box-shadow:var(--glow);flex:none}
+.gearbtn svg{width:22px;height:22px;transition:transform .5s}
+.gearbtn:active svg{transform:rotate(90deg)}
+.hstats{display:flex;gap:8px;margin-bottom:12px}
+.hstats div{flex:1;min-width:0;background:rgba(27,23,56,.82);border:1px solid var(--line);border-radius:14px;padding:10px 6px;text-align:center}
+.hstats b{display:block;font-size:19px;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hstats span{font-size:11px;color:var(--mute)}
+.card{border-radius:18px;background:linear-gradient(160deg,rgba(40,33,84,.9),rgba(22,18,46,.9));border:1px solid var(--line);padding:12px;position:relative;overflow:hidden;margin-bottom:12px}
+.card::after{content:"";position:absolute;right:-40px;top:-40px;width:120px;height:120px;border-radius:50%;background:radial-gradient(rgba(167,139,255,.22),transparent 70%);pointer-events:none}
+.iconbtn{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:rgba(22,24,31,.6);border:1px solid var(--line);flex:none}
+.iconbtn svg{width:19px;height:19px}
+.chip{padding:7px 12px;border-radius:99px;background:rgba(22,24,31,.85);border:1px solid var(--line);font-size:13px;font-weight:500;white-space:nowrap}
+.chip.on{background:var(--grad);color:#0b0a1a;border-color:transparent;box-shadow:var(--glow)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.hints{display:flex;flex-direction:column;gap:6px;margin:0 0 12px}
+.hint{display:flex;align-items:center;gap:10px;text-align:left;padding:9px 12px;border-radius:12px;background:rgba(27,23,56,.82);border:1px solid var(--line);font-size:14px;width:100%}
+.hint.warn{border-color:rgba(255,177,61,.5);background:rgba(255,177,61,.10)}
+.hint.bad{border-color:rgba(255,92,108,.5);background:rgba(255,92,108,.10)}
+.hint.good{border-color:rgba(63,214,138,.5);background:rgba(63,214,138,.10)}
+.dnav{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.dnav .t{flex:1;text-align:center;font-weight:700;font-size:17px}
+/* Kalorien-Ring */
+.ringwrap{display:flex;align-items:center;gap:12px}
+.ring{width:150px;height:150px;flex:none;position:relative}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.ring .c b{font-size:30px;line-height:1.05;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.ring .c b.over{background:none;color:var(--bad)}
+.ring .c span{font-size:11px;color:var(--mute)}
+.rside{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+.rside div{display:flex;justify-content:space-between;align-items:baseline;gap:6px;font-size:13px;color:var(--mute)}
+.rside b{color:var(--text);font-size:16px}
+.macros{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.macro span{display:block;font-size:12px;color:var(--mute)}
+.macro b{font-size:14px}
+.macro small{color:var(--mute);font-size:11px}
+.prog{height:7px;border-radius:7px;background:var(--panel2);overflow:hidden;margin-top:4px}
+.prog i{display:block;height:100%;border-radius:7px;background:var(--grad)}
+.prog i.over{background:linear-gradient(90deg,#ff8a8a,#ff5c6c)}
+/* Wasser */
+.water{display:flex;align-items:center;gap:10px}
+.water .gl{display:flex;gap:4px;flex-wrap:wrap;flex:1}
+.water .gl button{width:26px;height:32px;border-radius:4px 4px 8px 8px;border:2px solid #4b7fbf;position:relative;overflow:hidden}
+.water .gl button.on{background:linear-gradient(#7fe3ff,#3e8cff);border-color:#7fe3ff;box-shadow:0 0 8px rgba(127,227,255,.5)}
+/* Mahlzeiten */
+.meal{border-radius:16px;background:rgba(27,23,56,.82);border:1px solid var(--line);margin-bottom:10px;overflow:hidden}
+.mh{display:flex;align-items:center;gap:10px;padding:10px 10px 10px 12px}
+.mh .mi{font-size:24px;width:34px;text-align:center;flex:none}
+.mh .mt{flex:1;min-width:0}
+.mh .mt b{display:block}
+.mh .mt small{color:var(--mute);font-size:12px}
+.mh .add{width:40px;height:40px;border-radius:50%;background:var(--grad);color:#0b0a1a;display:grid;place-items:center;box-shadow:var(--glow);flex:none}
+.mh .add svg{width:22px;height:22px}
+.it{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:8px 12px;border-top:1px solid rgba(47,42,88,.6)}
+.it .n{flex:1;min-width:0}
+.it .n b{display:block;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.it .n small{color:var(--mute);font-size:12px}
+.it .k{font-weight:700;font-size:14px;flex:none}
+.mfoot{padding:6px 12px 10px;display:flex;gap:6px;flex-wrap:wrap}
+/* Listen */
+.row{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:rgba(27,23,56,.82);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:7px}
+.row:active{transform:scale(.985)}
+.row .ic{font-size:22px;width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:var(--panel2);flex:none}
+.row .mid{flex:1;min-width:0}
+.row .mid b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .mid small{display:block;color:var(--mute);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .rt{text-align:right;flex:none;font-size:13px}
+.row .rt b{display:block;font-size:15px}
+.row .rt small{color:var(--mute);font-size:11px}
+.tag{display:inline-block;font-size:10px;font-weight:700;padding:1px 6px;border-radius:99px;vertical-align:1px;background:var(--panel2);color:var(--acc);border:1px solid var(--line)}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.kv.three{grid-template-columns:1fr 1fr 1fr}
+.kv div{background:rgba(27,23,56,.82);border:1px solid var(--line);border-radius:12px;padding:9px 11px;min-width:0}
+.kv span{display:block;font-size:11px;color:var(--mute)}
+.kv b{font-size:16px}
+.big{font-size:38px;font-weight:700;line-height:1.1;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+/* Diagramme */
+.chart{width:100%;height:170px;display:block}
+.chart .ln{fill:none;stroke:url(#cg);stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+.chart .ar{fill:url(#ca);opacity:.5}
+.chart text{fill:var(--mute);font-size:10px;font-family:inherit}
+.chart .goal{stroke:var(--ok);stroke-dasharray:5 4;stroke-width:1.4}
+.chart .grid{stroke:rgba(156,149,200,.15);stroke-width:1}
+.bars{display:flex;align-items:flex-end;gap:4px;height:150px;margin:8px 0 4px;position:relative}
+.bars .b{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;height:100%;min-width:0}
+.bars .b i{display:block;width:70%;border-radius:4px 4px 0 0;min-height:2px;background:linear-gradient(#e59bff,#a78bff)}
+.bars .b i.over{background:linear-gradient(#ff8a8a,#ff5c6c)}
+.bars .b i.ok{background:linear-gradient(#8ff0b8,#3fd68a)}
+.bars .b small{font-size:9px;color:var(--mute);white-space:nowrap}
+.bars .b.cur small{color:var(--acc);font-weight:700}
+.bars .gl{position:absolute;left:0;right:0;border-top:1.5px dashed var(--ok);pointer-events:none}
+.donut{display:flex;gap:14px;align-items:center}
+.donut svg{width:120px;height:120px;flex:none}
+.leg{flex:1;min-width:0;font-size:13px}
+.leg div{display:flex;align-items:center;gap:6px;margin:4px 0}
+.leg i{width:10px;height:10px;border-radius:3px;flex:none}
+.leg span{flex:1}
+/* FAB, Sheet, Formulare */
+#fab{position:fixed;right:18px;bottom:calc(74px + var(--safe-b));width:62px;height:62px;border-radius:50%;background:var(--grad);color:#0b0a1a;box-shadow:0 0 0 3px rgba(167,139,255,.35),0 0 26px rgba(127,227,255,.55);display:grid;place-items:center;z-index:10;transition:transform .1s}
+#fab:active{transform:scale(.92)}
+#fab svg{width:30px;height:30px}
+#sheet{position:fixed;left:0;right:0;bottom:0;max-height:92%;background:var(--panel);border-radius:18px 18px 0 0;border-top:1px solid var(--line);transform:translateY(105%);transition:transform .25s ease;z-index:20;overflow-y:auto;padding:8px 16px calc(18px + var(--safe-b))}
+#sheet.on{transform:none}
+#scrim{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:19;display:none}
+#scrim.on{display:block}
+.grab{width:40px;height:4px;background:var(--line);border-radius:4px;margin:2px auto 12px}
+label.f{display:block;font-size:12px;color:var(--mute);margin:10px 0 4px}
+input[type=text],input[type=email],input[type=password],input[type=date],input[type=time],input[type=search],select,textarea{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 11px;outline:none;color-scheme:dark}
+input:focus,select:focus,textarea:focus{border-color:#7a6cff}
+.two{display:flex;gap:8px}.two>div{flex:1;min-width:0}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{flex:1;min-width:0;padding:9px 6px;border-radius:10px;background:var(--panel2);border:1px solid var(--line);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seg.wrap button{flex:1 1 30%;white-space:normal;line-height:1.2}
+.seg button.on{background:var(--grad);color:#0b0a1a;border-color:transparent;font-weight:700}
+.sw{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0 2px}
+.tog{width:46px;height:26px;border-radius:99px;background:var(--panel2);border:1px solid var(--line);position:relative;flex:none;transition:background .2s}
+.tog::after{content:"";position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:var(--mute);transition:transform .2s,background .2s}
+.tog.on{background:rgba(127,227,255,.25);border-color:var(--acc)}
+.tog.on::after{transform:translateX(20px);background:var(--acc)}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.btn{flex:1;min-width:110px;padding:12px;border-radius:11px;background:var(--panel2);border:1px solid var(--line);font-weight:500;text-align:center;text-decoration:none;color:var(--text)}
+.btn.pri{background:var(--grad);color:#0b0a1a;border-color:transparent;font-weight:700;box-shadow:var(--glow)}
+.btn.del{color:var(--bad);border-color:rgba(255,92,108,.4)}
+.btn:disabled{opacity:.5}
+.set-row{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)}
+.sbox{display:flex;gap:8px;margin-bottom:10px;position:sticky;top:-8px;z-index:2;padding:8px 0 4px;background:var(--panel)}
+.sbox input{flex:1;font-size:16px;padding:12px 13px;border-radius:12px;width:100%;background:var(--panel2);border:1px solid var(--line);outline:none}
+.sbox button{width:48px;border-radius:12px;background:var(--grad);color:#0b0a1a;display:grid;place-items:center;box-shadow:var(--glow);flex:none;font-size:22px}
+.amtin{width:100%;font-size:34px;font-weight:700;text-align:center;padding:8px;border-radius:14px;background:var(--panel2);border:1px solid var(--line);outline:none;color:var(--text)}
+.nutri{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:12px 0 4px;text-align:center}
+.nutri div{background:var(--panel2);border-radius:10px;padding:8px 2px;border:1px solid var(--line)}
+.nutri b{display:block;font-size:17px}
+.nutri span{font-size:11px;color:var(--mute)}
+.scanbox{position:relative;border-radius:16px;overflow:hidden;background:#000;aspect-ratio:4/3;margin-bottom:10px}
+.scanbox video{width:100%;height:100%;object-fit:cover;display:block}
+.scanbox .ln{position:absolute;left:10%;right:10%;top:50%;height:2px;background:#ff5c6c;box-shadow:0 0 12px #ff5c6c;animation:scan 1.6s ease-in-out infinite}
+@keyframes scan{50%{transform:translateY(-60px)}}
+.pbar{height:10px;border-radius:10px;background:var(--panel2);overflow:hidden;margin:10px 0}
+.pbar i{display:block;height:100%;background:var(--grad);transition:width .2s}
+#toast{position:fixed;z-index:50;left:50%;top:calc(14px + var(--safe-t));transform:translate(-50%,-150%);background:var(--panel2);border:1px solid var(--line);padding:9px 16px;border-radius:99px;transition:transform .25s;font-size:14px;max-width:90%;text-align:center}
+#toast.on{transform:translate(-50%,0)}
+.cp{color:var(--cp)} .cc{color:var(--cc)} .cf{color:var(--cf)} .red{color:var(--bad)} .grn{color:var(--ok)}
+</style>
+</head>
+<body>
+<div class="app" id="app"><main>
+<section class="view on" id="v-home"><div class="pad">
+  <div class="hero">
+    <img class="hlogo" id="logo" alt="">
+    <div style="flex:1;min-width:0"><h1>Fitness-Multiversum</h1><div class="sub" id="greet">Ernährung & Aktivität</div></div>
+    <button class="gearbtn" id="gear" aria-label="Einstellungen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+  </div>
+  <div id="home"></div>
+</div></section>
+<section class="view" id="v-body"><div class="pad" id="body"></div></section>
+<section class="view" id="v-act"><div class="pad" id="act"></div></section>
+<section class="view" id="v-stat"><div class="pad" id="stat"></div></section>
+</main>
+<nav>
+  <button class="on" data-v="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7c-2-2-6-2-7 1-1.5 4 1.5 11 4 12 1 .4 2-.4 3-.4s2 .8 3 .4c2.5-1 5.5-8 4-12-1-3-5-3-7-1z"/><path d="M12 7c0-2 1-4 3-5"/></svg>Tagebuch</button>
+  <button data-v="body"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="4"/><path d="M8 10a5 5 0 0 1 8 0"/><path d="m12 10 1.5-2"/></svg>Körper</button>
+  <button data-v="act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>Aktivität</button>
+  <button data-v="stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15v3M12 10v8M17 6v12"/></svg>Auswertung</button>
+</nav>
+</div>
+<button id="fab" aria-label="Hinzufügen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+<div id="scrim"></div>
+<div id="sheet"></div>
+<div id="toast"></div>
+<script>
+const APP_BUILD = 0; // wird beim Bauen der APK durch die Build-Nummer ersetzt
+const UPDATE_INFO = 'https://raw.githubusercontent.com/MrDocMoris/Fitness-Multiversum/main/app/version.json';
+
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function store(k, v){ try{ if(v === undefined) return JSON.parse(localStorage.getItem(k)); localStorage.setItem(k, JSON.stringify(v)); }catch(e){ return null; } }
+let toastT; function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2600); }
+let onSheetClose = null;
+function openSheet(html){ if(onSheetClose){ const f = onSheetClose; onSheetClose = null; f(); } $('#sheet').innerHTML = '<div class="grab"></div>' + html; $('#sheet').classList.add('on'); $('#scrim').classList.add('on'); $('#sheet').scrollTop = 0; }
+function closeSheet(){ if(onSheetClose){ const f = onSheetClose; onSheetClose = null; f(); } $('#sheet').classList.remove('on'); $('#scrim').classList.remove('on'); }
+$('#scrim').onclick = closeSheet;
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+let _confirmT;
+function confirmTwice(sel){ const b = $(sel); if(b.dataset.sure) return true; b.dataset.sure = 1; const old = b.textContent; b.textContent = 'Wirklich?'; clearTimeout(_confirmT); _confirmT = setTimeout(() => { if(b.isConnected){ b.textContent = old; delete b.dataset.sure; } }, 2500); return false; }
+const segVal = id => { const b = $(`#${id} button.on`); return b ? b.dataset.v : null; };
+function wireSeg(id, cb){ $$(`#${id} button`).forEach(b => b.onclick = () => { $$(`#${id} button`).forEach(x => x.classList.toggle('on', x === b)); if(cb) cb(b.dataset.v); }); }
+const segHtml = (id, opts, sel, cls) => `<div class="seg ${cls || ''}" id="${id}">${opts.map(([v, n]) => `<button data-v="${v}" class="${String(v) === String(sel) ? 'on' : ''}">${n}</button>`).join('')}</div>`;
+
+/* Android-App (Capacitor) */
+const NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+const _plugs = {};
+function plug(name){
+  if(!NATIVE) return null;
+  if(!_plugs[name]) _plugs[name] = (window.capacitorExports && window.capacitorExports.registerPlugin) ? window.capacitorExports.registerPlugin(name) : window.Capacitor.Plugins[name];
+  return _plugs[name];
+}
+function openUrl(url){ if(NATIVE) plug('Browser').open({url}).catch(() => { location.href = url; }); else window.open(url, '_blank'); }
+
+/* ================= Datum & Zahlen ================= */
+const pad2 = n => String(n).padStart(2, '0');
+const ymd = d => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+const parse = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const todayStr = () => ymd(new Date());
+const addDays = (s, n) => { const d = parse(s); d.setDate(d.getDate() + n); return ymd(d); };
+const daysBetween = (a, b) => Math.round((parse(b) - parse(a)) / 864e5);
+const WD = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'], WDL = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+const MSHORT = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+function fmtDay(ds){ const t = todayStr(); if(ds === t) return 'Heute'; if(ds === addDays(t, -1)) return 'Gestern'; if(ds === addDays(t, 1)) return 'Morgen'; const d = parse(ds); return `${WDL[d.getDay()]}, ${d.getDate()}. ${MSHORT[d.getMonth()]}${d.getFullYear() !== new Date().getFullYear() ? ' ' + d.getFullYear() : ''}`; }
+const fmtShortDay = ds => { const d = parse(ds); return `${d.getDate()}.${d.getMonth() + 1}.`; };
+const num = s => { const v = parseFloat(String(s ?? '').replace(',', '.').replace(/[^\d.\-]/g, '')); return isNaN(v) ? NaN : v; };
+const r0 = v => Math.round(v || 0), r1 = v => Math.round((v || 0) * 10) / 10;
+const de = (v, d = 0) => (v || 0).toLocaleString('de-DE', {maximumFractionDigits:d, minimumFractionDigits:0});
+const kg = v => v ? de(v, 1) + ' kg' : '–';
+const fmtDur = s => { s = Math.round(s || 0); const h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60); return h ? `${h} h ${pad2(m)} min` : `${m} min`; };
+
+/* ================= Grunddaten ================= */
+const MEALS = [['breakfast', 'Frühstück', '☕'], ['lunch', 'Mittagessen', '🍝'], ['dinner', 'Abendessen', '🍲'], ['snack', 'Snacks', '🍎']];
+const MEAL = Object.fromEntries(MEALS.map(([k, n, i]) => [k, {k, n, i}]));
+function mealForNow(){ const h = new Date().getHours(); return h < 10 ? 'breakfast' : h < 14 ? 'lunch' : h < 17 ? 'snack' : h < 21 ? 'dinner' : 'snack'; }
+
+/* Grundnahrungsmittel (Richtwerte pro 100 g / 100 ml): Name, kcal, Eiweiß, Kohlenhydrate, Fett, Portion in g, Portionsname */
+const BASICS_RAW = [
+  ['Apfel',52,0.3,14,0.2,180,'1 Apfel'], ['Banane',89,1.1,23,0.3,120,'1 Banane'], ['Orange',47,0.9,12,0.1,150,'1 Orange'], ['Erdbeeren',32,0.7,7.7,0.3,150,'1 Schale'],
+  ['Weintrauben',70,0.7,17,0.2,125,'1 Handvoll'], ['Hühnerei',155,13,1.1,11,60,'1 Ei'], ['Haferflocken',372,13.5,58.7,7,40,'1 Portion'], ['Müsli',360,10,62,6,60,'1 Schale'],
+  ['Cornflakes',375,7,84,0.9,30,'1 Portion'], ['Vollkornbrot',220,8,40,2,50,'1 Scheibe'], ['Toastbrot',260,8,48,3.5,25,'1 Scheibe'], ['Brötchen (Weizen)',270,9,53,1.5,55,'1 Brötchen'],
+  ['Butter',741,0.7,0.6,83,10,'1 Portion'], ['Milch 1,5 %',47,3.4,4.9,1.5,200,'1 Glas'], ['Milch 3,5 %',64,3.3,4.8,3.5,200,'1 Glas'], ['Joghurt natur 3,5 %',61,3.5,4,3.5,150,'1 Becher'],
+  ['Magerquark',67,12,4,0.3,250,'1 Becher'], ['Skyr',63,11,4,0.2,150,'1 Portion'], ['Gouda',356,25,0,28,30,'1 Scheibe'], ['Mozzarella',250,18,1,19,125,'1 Kugel'],
+  ['Frischkäse',250,6,3.5,24,30,'1 Portion'], ['Hähnchenbrust (roh)',110,23,0,1.5,150,'1 Filet'], ['Rinderhack (roh)',250,18,0,20,125,'1 Portion'], ['Lachs',200,20,0,13,125,'1 Filet'],
+  ['Thunfisch (Wasser)',110,25,0,1,150,'1 Dose'], ['Kochschinken',110,19,1,3.5,20,'1 Scheibe'], ['Salami',400,22,1,34,10,'1 Scheibe'], ['Bratwurst',300,14,1,27,100,'1 Wurst'],
+  ['Reis (gekocht)',130,2.7,28,0.3,200,'1 Portion'], ['Nudeln (gekocht)',150,5.5,30,0.9,250,'1 Portion'], ['Kartoffeln (gekocht)',72,2,15.6,0.1,200,'1 Portion'], ['Pommes frites',290,3.4,36,15,150,'1 Portion'],
+  ['Linsen (gekocht)',116,9,20,0.4,200,'1 Portion'], ['Kidneybohnen (Dose)',90,7,13,0.5,125,'½ Dose'], ['Tofu',125,13,1.5,7.5,100,'1 Portion'], ['Brokkoli',34,2.8,7,0.4,200,'1 Portion'],
+  ['Gurke',15,0.6,3.6,0.1,100,'¼ Gurke'], ['Tomate',18,0.9,3.9,0.2,100,'1 Tomate'], ['Paprika',31,1,6,0.3,150,'1 Paprika'], ['Karotte',41,0.9,9.6,0.2,80,'1 Karotte'],
+  ['Blattsalat',15,1.4,2.9,0.2,80,'1 Schale'], ['Avocado',160,2,8.5,14.7,150,'1 Avocado'], ['Erdnussbutter',590,25,20,50,15,'1 EL'], ['Nüsse (gemischt)',610,18,14,54,30,'1 Handvoll'],
+  ['Olivenöl',884,0,0,100,10,'1 EL'], ['Zucker',400,0,100,0,5,'1 TL'], ['Honig',304,0.3,82,0,20,'1 EL'], ['Marmelade',250,0.4,60,0.1,20,'1 Portion'],
+  ['Nuss-Nougat-Creme',539,6.3,57.5,30.9,15,'1 Portion'], ['Vollmilchschokolade',535,7.6,59,30,25,'1 Reihe'], ['Chips',536,6,53,34,30,'1 Handvoll'], ['Gummibärchen',343,6.9,77,0.5,25,'1 Handvoll'],
+  ['Pizza Margherita',240,10,30,9,350,'1 Pizza'], ['Döner',215,12,20,10,400,'1 Döner'], ['Burger',250,13,24,11,220,'1 Burger'], ['Currywurst',230,9,10,17,250,'1 Portion'],
+  ['Cola',42,0,10.6,0,330,'1 Dose'], ['Cola Zero',0.3,0,0,0,330,'1 Dose'], ['Apfelsaft',46,0.1,11,0.1,200,'1 Glas'], ['Orangensaft',43,0.7,9,0.2,200,'1 Glas'],
+  ['Energy Drink',45,0,11,0,250,'1 Dose'], ['Bier',43,0.5,3.6,0,500,'1 Flasche (0,5 l)'], ['Rotwein',85,0.1,2.6,0,200,'1 Glas'], ['Kaffee schwarz',2,0.1,0.3,0,200,'1 Tasse'],
+  ['Cappuccino',35,1.8,2.7,1.8,200,'1 Tasse'], ['Proteinpulver',380,75,8,6,30,'1 Messlöffel'], ['Proteinriegel',350,33,35,10,60,'1 Riegel'],
+];
+const BASICS = BASICS_RAW.map(([name, kcal, p, c, f, sg, sl]) => ({id:'b:' + name.toLowerCase().replace(/[^a-zäöüß0-9]+/g, '-'), name, brand:'', basic:true, per100:{kcal, p, c, f}, serving:{g:sg, label:sl}}));
+
+/* ================= Daten (nur auf dem Gerät) ================= */
+const S = {
+  cfg: Object.assign({name:'', notify:true, mealRemind:false, mealTimes:{breakfast:'09:30', lunch:'13:30', dinner:'19:30'}, weighRemind:false, weighAt:'07:30', credit:100, glass:250}, store('fx_cfg') || {}),
+  prof: store('fx_prof') || null,     // {sex, birth, height, weight, goalWeight, activity, goal, macro, water, manualKcal}
+  log: store('fx_log') || [],         // Tagebuch-Einträge
+  foods: store('fx_foods') || {},     // eigene, gescannte und zuletzt benutzte Lebensmittel
+  weights: store('fx_weights') || [], // {id, date, kg, src}
+  water: store('fx_water') || {},     // {datum: ml}
+  g: Object.assign({key:'', tok:'', tokExp:0, days:{}, sleep:{}, acts:[], last:0, first:true}, store('fx_garmin') || {}),
+  view: 'home', day: null, statRange: 7,
+};
+const saveCfg = () => { store('fx_cfg', S.cfg); scheduleReminders(); autoBackup(); };
+const saveProf = () => { store('fx_prof', S.prof); scheduleReminders(); autoBackup(); };
+const saveLog = () => { store('fx_log', S.log); store('fx_foods', S.foods); scheduleReminders(); autoBackup(); };
+const saveFoods = () => { store('fx_foods', S.foods); autoBackup(); };
+const saveWeights = () => { S.weights.sort((a, b) => a.date.localeCompare(b.date) || (a.ts || 0) - (b.ts || 0)); store('fx_weights', S.weights); autoBackup(); };
+const saveWater = () => { store('fx_water', S.water); autoBackup(); };
+const saveG = () => store('fx_garmin', S.g);
+
+/* ================= Berechnungen ================= */
+const ACT = {low:['Wenig', 'Bürojob, kaum Bewegung', 1.2], light:['Leicht', 'etwas Bewegung im Alltag', 1.375], mid:['Mittel', '3–5× Sport pro Woche', 1.55], high:['Viel', 'körperliche Arbeit / täglich Sport', 1.725]};
+const GOALS = {lose3:['Langsam abnehmen', -0.25], lose5:['Abnehmen', -0.5], lose7:['Schnell abnehmen', -0.75], keep:['Halten', 0], gain:['Zunehmen', 0.25]};
+const MACROS = {std:['Ausgewogen', 20, 50, 30], protein:['Eiweißreich', 30, 40, 30], lowcarb:['Low Carb', 30, 20, 50], sport:['Muskelaufbau', 25, 50, 25]};
+function weightOn(ds){ let w = null; for(const x of S.weights){ if(x.date <= ds) w = x.kg; else break; } return w || (S.prof && S.prof.weight) || null; }
+const curWeight = () => weightOn(todayStr());
+const gActive = () => !!S.g.key;
+function bmr(ds){
+  const p = S.prof; if(!p) return 0;
+  const w = weightOn(ds || todayStr()) || 75, h = p.height || 175, a = new Date().getFullYear() - (p.birth || 1990);
+  return 10 * w + 6.25 * h - 5 * a + (p.sex === 'f' ? -161 : 5);
+}
+/* Grundbedarf ohne Sport: mit Garmin wird die echte Aktivität dazugerechnet, ohne Garmin der gewählte Aktivitätsfaktor */
+function baseGoal(ds){
+  const p = S.prof; if(!p) return 2000;
+  if(p.manualKcal) return p.manualKcal;
+  const pal = gActive() ? 1.2 : (ACT[p.activity] || ACT.light)[2];
+  const adj = ((GOALS[p.goal] || GOALS.keep)[1]) * 7700 / 7;
+  return Math.max(1200, Math.round(bmr(ds) * pal + adj));
+}
+const activeKcal = ds => { const d = S.g.days[ds]; return d && d.active ? d.active : 0; };
+function kcalGoal(ds){ return baseGoal(ds) + (gActive() && !(S.prof && S.prof.manualKcal) ? Math.round(activeKcal(ds) * (S.cfg.credit || 0) / 100) : 0); }
+function macroGoal(ds){ const k = kcalGoal(ds), m = MACROS[(S.prof && S.prof.macro) || 'std'] || MACROS.std; return {p:k * m[1] / 100 / 4, c:k * m[2] / 100 / 4, f:k * m[3] / 100 / 9}; }
+const waterGoal = () => (S.prof && S.prof.water) || 2000;
+const entriesOf = ds => S.log.filter(e => e.date === ds);
+function sumOf(list){ const s = {kcal:0, p:0, c:0, f:0}; list.forEach(e => { s.kcal += e.kcal || 0; s.p += e.p || 0; s.c += e.c || 0; s.f += e.f || 0; }); return s; }
+const dayTotals = ds => sumOf(entriesOf(ds));
+function calcEntry(food, grams){ const n = food.per100 || {}, k = grams / 100; return {kcal:(n.kcal || 0) * k, p:(n.p || 0) * k, c:(n.c || 0) * k, f:(n.f || 0) * k}; }
+function amountText(e){ if(e.quick) return 'Schnell eingetragen'; if(e.portions && e.serving) return `${de(e.portions, 2)} × ${e.serving.label || 'Portion'} (${de(e.grams)} g)`; return `${de(e.grams)} ${e.unit || 'g'}`; }
+
+/* ================= Tagebuch (Startseite) ================= */
+function ringSvg(frac, over){
+  const C = 2 * Math.PI * 62, p = Math.max(0, Math.min(1, frac));
+  return `<svg viewBox="0 0 140 140"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6fe3ff"/><stop offset=".55" stop-color="#a78bff"/><stop offset="1" stop-color="#e59bff"/></linearGradient></defs>
+    <circle cx="70" cy="70" r="62" fill="none" stroke="#2a2360" stroke-width="12"/>
+    <circle cx="70" cy="70" r="62" fill="none" stroke="${over ? '#ff5c6c' : 'url(#rg)'}" stroke-width="12" stroke-linecap="round" stroke-dasharray="${C * p} ${C}" style="filter:drop-shadow(0 0 6px rgba(130,110,255,.6))"/></svg>`;
+}
+const macroBox = (label, cls, val, goal) => `<div class="macro"><span class="${cls}">${label}</span><b>${r0(val)}</b><small> / ${r0(goal)} g</small><div class="prog"><i class="${val > goal * 1.1 ? 'over' : ''}" style="width:${goal ? Math.min(100, val / goal * 100) : 0}%"></i></div></div>`;
+function renderHome(){
+  const ds = S.day, t = todayStr();
+  $('#logo').src = 'icon.svg'; $('#logo').onerror = () => { $('#logo').style.display = 'none'; };
+  const h = new Date().getHours();
+  $('#greet').textContent = (h < 11 ? 'Guten Morgen' : h < 18 ? 'Hallo' : 'Guten Abend') + (S.cfg.name ? ` ${S.cfg.name}` : '') + ' 👋';
+  const tot = dayTotals(ds), goal = kcalGoal(ds), mg = macroGoal(ds), act = activeKcal(ds), left = goal - tot.kcal;
+  const wml = S.water[ds] || 0, glass = S.cfg.glass || 250, nG = Math.max(8, Math.ceil(waterGoal() / glass)), filled = Math.round(wml / glass);
+  const hints = [];
+  if(!S.prof) hints.push(`<button class="hint warn" id="h-prof">🎯 <span><b>Ziele einrichten:</b> Größe, Gewicht und Ziel eintragen, dann rechnet die App deinen Kalorienbedarf aus.</span></button>`);
+  if(!gActive() && !store('fx_hide_g')) hints.push(`<button class="hint" id="h-g">⌚ <span><b>Garmin verbinden</b>: Schritte und verbrannte Kalorien kommen dann automatisch dazu.</span></button>`);
+  if(gActive() && S.g.err) hints.push(`<button class="hint bad" id="h-gerr">⚠️ <span>Garmin: ${esc(S.g.err)}</span></button>`);
+  if(ds === t && !S.weights.some(w => w.date >= addDays(t, -7)) && S.prof) hints.push(`<button class="hint" id="h-w">⚖️ <span>Seit über einer Woche kein Gewicht eingetragen – kurz wiegen?</span></button>`);
+  const gd = S.g.days[ds], sl = S.g.sleep[ds];
+  $('#home').innerHTML = `
+    <div class="dnav"><button class="iconbtn" id="d-p"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="m15 18-6-6 6-6"/></svg></button><button class="t" id="d-t">${fmtDay(ds)}</button><button class="iconbtn" id="d-n" ${ds >= t ? 'style="opacity:.3"' : ''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg></button></div>
+    <div class="hints">${hints.join('')}</div>
+    <div class="card">
+      <div class="ringwrap">
+        <div class="ring">${ringSvg(goal ? tot.kcal / goal : 0, left < 0)}<div class="c"><b class="${left < 0 ? 'over' : ''}">${de(Math.abs(left))}</b><span>${left < 0 ? 'kcal zu viel' : 'kcal übrig'}</span></div></div>
+        <div class="rside">
+          <div>🍽️ Gegessen <b>${de(tot.kcal)}</b></div>
+          <div>🔥 Aktivität <b>${gActive() ? de(act) : '–'}</b></div>
+          <div>🎯 Ziel <b>${de(goal)}</b></div>
+          ${gd && gd.steps != null ? `<div>👟 Schritte <b>${de(gd.steps)}</b></div>` : ''}
+        </div>
+      </div>
+      <div class="macros">${macroBox('Eiweiß', 'cp', tot.p, mg.p)}${macroBox('Kohlenhydrate', 'cc', tot.c, mg.c)}${macroBox('Fett', 'cf', tot.f, mg.f)}</div>
+    </div>
+    <div class="card"><div class="water"><div style="font-size:26px">💧</div><div style="flex:1;min-width:0"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><b>Wasser</b><span class="muted">${de(wml / 1000, 2)} / ${de(waterGoal() / 1000, 1)} l</span></div>
+      <div class="gl">${Array.from({length:nG}, (_, i) => `<button data-g="${i}" class="${i < filled ? 'on' : ''}" aria-label="Glas"></button>`).join('')}</div></div></div></div>
+    ${sl && sl.sec ? `<div class="hint" style="margin-bottom:12px">😴 <span>Schlaf: <b>${fmtDur(sl.sec)}</b>${sl.score ? ` · Schlafwert ${sl.score}` : ''}</span></div>` : ''}
+    ${MEALS.map(([k, n, ic]) => {
+      const list = entriesOf(ds).filter(e => e.meal === k), s = sumOf(list), yday = entriesOf(addDays(ds, -1)).filter(e => e.meal === k);
+      return `<div class="meal"><div class="mh"><div class="mi">${ic}</div><div class="mt"><b>${n}</b><small>${list.length ? `${de(s.kcal)} kcal · E ${r0(s.p)} · K ${r0(s.c)} · F ${r0(s.f)}` : 'noch nichts eingetragen'}</small></div><button class="add" data-add="${k}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></div>
+        ${list.map(e => `<button class="it" data-e="${e.id}"><div class="n"><b>${esc(e.name)}</b><small>${esc(amountText(e))}</small></div><div class="k">${de(e.kcal)}</div></button>`).join('')}
+        ${!list.length && yday.length ? `<div class="mfoot"><button class="chip" data-copy="${k}">↺ Wie gestern (${de(sumOf(yday).kcal)} kcal)</button></div>` : ''}</div>`;
+    }).join('')}`;
+  $('#d-p').onclick = () => { S.day = addDays(S.day, -1); renderHome(); };
+  $('#d-n').onclick = () => { if(S.day < t){ S.day = addDays(S.day, 1); renderHome(); } };
+  $('#d-t').onclick = () => { if(S.day !== t){ S.day = t; renderHome(); } else dayPicker(); };
+  $$('#home [data-add]').forEach(b => b.onclick = () => foodSheet(b.dataset.add));
+  $$('#home [data-e]').forEach(b => b.onclick = () => { const e = S.log.find(x => x.id === b.dataset.e); if(e.quick) quickSheet(e.meal, e); else amountSheet(e.food || {name:e.name, per100:{}}, e.meal, e); });
+  $$('#home [data-copy]').forEach(b => b.onclick = () => { const k = b.dataset.copy; entriesOf(addDays(ds, -1)).filter(e => e.meal === k).forEach(e => S.log.push({...e, id:uid(), date:ds, ts:Date.now(), src:'app'})); saveLog(); renderHome(); toast('✓ Von gestern übernommen'); });
+  $$('#home [data-g]').forEach(b => b.onclick = () => { const i = +b.dataset.g, cur = Math.round((S.water[ds] || 0) / glass); S.water[ds] = (i + 1 === cur ? i : i + 1) * glass; saveWater(); renderHome(); });
+  if($('#h-prof')) $('#h-prof').onclick = goalSheet;
+  if($('#h-g')) $('#h-g').onclick = garminSheet;
+  if($('#h-gerr')) $('#h-gerr').onclick = garminSheet;
+  if($('#h-w')) $('#h-w').onclick = () => weightSheet();
+}
+function dayPicker(){
+  openSheet(`<h2>Tag auswählen</h2><input type="date" id="dp" value="${S.day}" max="${todayStr()}"><div class="btns"><button class="btn pri" id="dp-go">Anzeigen</button></div>`);
+  $('#dp-go').onclick = () => { const v = $('#dp').value; if(v){ S.day = v > todayStr() ? todayStr() : v; closeSheet(); renderHome(); } };
+}
+
+/* ================= Lebensmittel suchen & hinzufügen ================= */
+function allLocalFoods(){ const m = new Map(); BASICS.forEach(f => m.set(f.id, f)); Object.values(S.foods).forEach(f => m.set(f.id, f)); return [...m.values()]; }
+function searchLocal(q){
+  const toks = q.toLowerCase().split(/\s+/).filter(Boolean);
+  let list = allLocalFoods();
+  if(toks.length) list = list.filter(f => { const h = (f.name + ' ' + (f.brand || '')).toLowerCase(); return toks.every(t => h.includes(t)); });
+  return list.sort((a, b) => (b.fav ? 1 : 0) - (a.fav ? 1 : 0) || (b.uses || 0) - (a.uses || 0) || (b.last || 0) - (a.last || 0) || a.name.localeCompare(b.name));
+}
+const foodRow = (f, extra) => `<button class="row" data-f="${esc(f.id)}"><div class="ic">${f.fav ? '⭐' : f.own ? '✏️' : f.code ? '🏷️' : f.basic ? '🥗' : f.src === 'yazio' ? '🍏' : '🕘'}</div><div class="mid"><b>${esc(f.name)}</b><small>${esc([f.brand, f.serving && f.serving.label && f.serving.g ? `${f.serving.label} = ${de(f.serving.g)} g` : ''].filter(Boolean).join(' · ') || (extra || ''))}</small></div><div class="rt"><b>${de(f.per100.kcal)}</b><small>kcal/100${f.unit === 'ml' ? ' ml' : ' g'}</small></div></button>`;
+let _online = [];
+function foodSheet(meal, presetQ){
+  meal = meal || mealForNow();
+  openSheet(`<h2 style="margin-bottom:8px">Hinzufügen</h2>
+    ${segHtml('fs-meal', MEALS.map(([k, n, i]) => [k, i + ' ' + n.replace('essen', '')]), meal)}
+    <div class="sbox" style="margin-top:8px"><input type="search" id="fq" placeholder="Lebensmittel oder Marke suchen…" enterkeyhint="search" value="${esc(presetQ || '')}"><button id="fscan" aria-label="Barcode scannen">📷</button></div>
+    <div class="chips" style="margin-bottom:10px"><button class="chip" id="f-quick">⚡ Nur Kalorien</button><button class="chip" id="f-own">✏️ Eigenes Lebensmittel</button><button class="chip" id="f-on">🌍 Online suchen</button></div>
+    <div id="fres"></div>`);
+  const getMeal = () => segVal('fs-meal') || meal;
+  wireSeg('fs-meal');
+  const draw = () => {
+    const q = $('#fq').value.trim(), loc = searchLocal(q).slice(0, q ? 40 : 25);
+    let html = '';
+    if(!q){ const fav = loc.filter(f => f.fav), rec = loc.filter(f => !f.fav && f.last).sort((a, b) => b.last - a.last).slice(0, 12); html += fav.length ? `<h3>⭐ Favoriten</h3>${fav.map(f => foodRow(f)).join('')}` : ''; html += rec.length ? `<h3>Zuletzt benutzt</h3>${rec.map(f => foodRow(f)).join('')}` : ''; if(!fav.length && !rec.length) html += `<h3>Grundnahrungsmittel</h3>${BASICS.slice(0, 20).map(f => foodRow(f)).join('')}`; }
+    else{
+      html += loc.length ? `<h3>Gespeichert & Grundnahrungsmittel</h3>${loc.map(f => foodRow(f)).join('')}` : '';
+      html += _online.length ? `<h3>Open Food Facts</h3>${_online.map(f => foodRow(f)).join('')}` : '';
+      html += `<button class="btn" id="f-on2" style="width:100%;margin-top:8px">🌍 „${esc(q)}“ in Open Food Facts suchen</button>`;
+    }
+    $('#fres').innerHTML = html || '<div class="empty">Nichts gefunden.</div>';
+    $$('#fres [data-f]').forEach(b => b.onclick = () => { const id = b.dataset.f; const f = allLocalFoods().find(x => x.id === id) || _online.find(x => x.id === id); amountSheet(f, getMeal()); });
+    if($('#f-on2')) $('#f-on2').onclick = online;
+  };
+  const online = async () => {
+    const q = $('#fq').value.trim(); if(q.length < 2){ toast('Bitte zuerst einen Suchbegriff eingeben'); $('#fq').focus(); return; }
+    const btn = $('#f-on2') || $('#f-on'); if(btn) btn.textContent = '⏳ Suche läuft…';
+    try{ _online = await offSearch(q); if(!_online.length) toast('Keine Treffer in Open Food Facts'); }
+    catch(e){ toast('Online-Suche fehlgeschlagen – bist du online?'); }
+    if($('#fq')) draw();
+  };
+  _online = [];
+  $('#fq').oninput = () => { _online = []; draw(); };
+  $('#fq').onkeydown = e => { if(e.key === 'Enter'){ e.preventDefault(); online(); } };
+  $('#f-on').onclick = online;
+  $('#fscan').onclick = () => scanSheet(getMeal());
+  $('#f-quick').onclick = () => quickSheet(getMeal());
+  $('#f-own').onclick = () => ownFoodSheet(null, {name:$('#fq').value.trim()}, getMeal());
+  draw();
+  if(!presetQ) setTimeout(() => { const i = $('#fq'); if(i) i.focus(); }, 300);
+}
+
+/* Open Food Facts (freie Lebensmittel-Datenbank, auch für Barcodes) */
+const OFF_FIELDS = 'code,product_name,product_name_de,generic_name,brands,nutriments,serving_quantity,serving_size,quantity';
+const offHeaders = () => NATIVE ? {'User-Agent':'FitnessMultiversum/1.0 (private Android-App)'} : {};
+function offToFood(p){
+  if(!p) return null;
+  const n = p.nutriments || {};
+  let kcal = n['energy-kcal_100g']; if(kcal == null && n.energy_100g != null) kcal = n.energy_100g / 4.184;
+  if(kcal == null) return null;
+  const name = (p.product_name_de || p.product_name || p.generic_name || '').trim(); if(!name) return null;
+  const sq = parseFloat(p.serving_quantity);
+  return {id:'off:' + p.code, code:p.code, name, brand:String(p.brands || '').split(',')[0].trim(), per100:{kcal:+kcal || 0, p:+n.proteins_100g || 0, c:+n.carbohydrates_100g || 0, f:+n.fat_100g || 0, sugar:+n.sugars_100g || 0, fiber:+n.fiber_100g || 0, salt:+n.salt_100g || 0}, serving:sq > 0 ? {g:sq, label:p.serving_size ? String(p.serving_size).replace(/\s*\(.*\)/, '').slice(0, 24) : 'Portion'} : null, src:'off'};
+}
+async function offSearch(q){
+  const url = `https://de.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=30&lc=de&fields=${OFF_FIELDS}`;
+  const r = await fetch(url, {headers:offHeaders()}); if(!r.ok) throw new Error(r.status);
+  const d = await r.json();
+  return (d.products || []).map(offToFood).filter(Boolean);
+}
+async function offBarcode(code){
+  const r = await fetch(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json?fields=${OFF_FIELDS}`, {headers:offHeaders()});
+  if(r.status === 404) return null; if(!r.ok) throw new Error(r.status);
+  const d = await r.json(); return d.status === 1 || d.product ? offToFood(d.product) : null;
+}
+
+/* Menge wählen */
+function amountSheet(food, meal, entry){
+  if(!food){ toast('Lebensmittel nicht gefunden'); return; }
+  const stored = S.foods[food.id]; if(stored) food = stored;
+  const sv = food.serving && food.serving.g ? food.serving : null;
+  let unit = entry ? (entry.portions && sv ? 'p' : 'g') : (sv ? 'p' : 'g');
+  let amt = entry ? (unit === 'p' ? entry.portions : entry.grams) : (sv ? 1 : 100);
+  const u = food.unit || 'g';
+  openSheet(`<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><div style="flex:1;min-width:0"><h2 style="margin:0">${esc(food.name)}</h2><div class="muted">${esc(food.brand || '')}${food.brand ? ' · ' : ''}${de(food.per100.kcal)} kcal pro 100 ${u}</div></div><button class="iconbtn" id="a-fav" style="font-size:18px">${food.fav ? '⭐' : '☆'}</button></div>
+    ${segHtml('a-meal', MEALS.map(([k, n, i]) => [k, i + ' ' + n.replace('essen', '')]), entry ? entry.meal : meal)}
+    <div class="two" style="margin-top:12px;align-items:center"><div style="flex:1.3"><input class="amtin" id="a-amt" inputmode="decimal" value="${de(amt, 2)}"></div><div>${segHtml('a-unit', [['g', u], ...(sv ? [['p', esc(sv.label || 'Portion')]] : [])], unit)}</div></div>
+    <div class="chips" id="a-quick" style="margin-top:8px"></div>
+    <div class="nutri" id="a-nut"></div>
+    <div class="btns"><button class="btn pri" id="a-save">${entry ? 'Speichern' : 'Eintragen'}</button>${entry ? '<button class="btn del" id="a-del">Löschen</button>' : ''}</div>
+    <div class="btns" style="margin-top:8px"><button class="btn" id="a-edit">✏️ Nährwerte bearbeiten</button></div>
+    ${food.per100.sugar || food.per100.fiber || food.per100.salt ? `<p class="muted" style="font-size:12px">Pro 100 ${u}: Zucker ${de(food.per100.sugar, 1)} g · Ballaststoffe ${de(food.per100.fiber, 1)} g · Salz ${de(food.per100.salt, 2)} g</p>` : ''}`);
+  const grams = () => { const v = num($('#a-amt').value); if(isNaN(v)) return 0; return unit === 'p' && sv ? v * sv.g : v; };
+  const quick = () => { $('#a-quick').innerHTML = (unit === 'p' ? [0.5, 1, 1.5, 2, 3] : [25, 50, 100, 150, 200, 250]).map(v => `<button class="chip" data-q="${v}">${de(v, 1)}${unit === 'p' ? '×' : ' ' + u}</button>`).join(''); $$('#a-quick [data-q]').forEach(b => b.onclick = () => { $('#a-amt').value = de(+b.dataset.q, 2); upd(); }); };
+  const upd = () => { const n = calcEntry(food, grams()); $('#a-nut').innerHTML = `<div><b>${de(n.kcal)}</b><span>kcal</span></div><div><b class="cp">${de(n.p, 1)}</b><span>Eiweiß</span></div><div><b class="cc">${de(n.c, 1)}</b><span>Kohlenh.</span></div><div><b class="cf">${de(n.f, 1)}</b><span>Fett</span></div>`; };
+  wireSeg('a-meal');
+  wireSeg('a-unit', v => { const g = grams(); unit = v; $('#a-amt').value = de(v === 'p' && sv ? g / sv.g : g, 2); quick(); upd(); });
+  $('#a-amt').oninput = upd; $('#a-amt').onfocus = e => e.target.select();
+  quick(); upd();
+  $('#a-fav').onclick = () => { food = rememberFood(food); food.fav = !food.fav; saveFoods(); $('#a-fav').textContent = food.fav ? '⭐' : '☆'; toast(food.fav ? '⭐ Zu Favoriten hinzugefügt' : 'Aus Favoriten entfernt'); };
+  $('#a-edit').onclick = () => ownFoodSheet(food, null, segVal('a-meal'));
+  $('#a-save').onclick = () => {
+    const g = grams(); if(!(g > 0)){ toast('Bitte eine Menge eingeben'); return; }
+    food = rememberFood(food); food.uses = (food.uses || 0) + (entry ? 0 : 1); food.last = Date.now();
+    const n = calcEntry(food, g), m = segVal('a-meal') || meal;
+    const data = {name:food.name + (food.brand ? ` (${food.brand})` : ''), meal:m, grams:r1(g), unit:u, portions:unit === 'p' ? num($('#a-amt').value) : null, serving:sv, kcal:r1(n.kcal), p:r1(n.p), c:r1(n.c), f:r1(n.f), food:{id:food.id, name:food.name, brand:food.brand, per100:food.per100, serving:food.serving, unit:food.unit, code:food.code}};
+    if(entry) Object.assign(entry, data); else S.log.push({id:uid(), date:S.day, ts:Date.now(), src:'app', ...data});
+    saveLog(); closeSheet(); renderAll(); toast(entry ? '✓ Gespeichert' : `✓ ${de(n.kcal)} kcal eingetragen`);
+  };
+  if(entry) $('#a-del').onclick = () => { if(!confirmTwice('#a-del')) return; S.log = S.log.filter(x => x.id !== entry.id); saveLog(); closeSheet(); renderAll(); toast('Gelöscht'); };
+}
+function rememberFood(f){
+  if(S.foods[f.id]) return S.foods[f.id];
+  const copy = {id:f.id, name:f.name, brand:f.brand || '', per100:{...f.per100}, serving:f.serving || null, code:f.code || null, unit:f.unit || 'g', src:f.src || (f.basic ? 'basic' : 'app'), basic:!!f.basic, own:!!f.own};
+  S.foods[f.id] = copy; return copy;
+}
+
+/* Nur Kalorien eintragen */
+function quickSheet(meal, entry){
+  openSheet(`<h2>⚡ Schnell eintragen</h2>
+    ${segHtml('q-meal', MEALS.map(([k, n, i]) => [k, i + ' ' + n.replace('essen', '')]), entry ? entry.meal : meal)}
+    <label class="f">Bezeichnung (optional)</label><input type="text" id="q-name" value="${esc(entry ? entry.name : '')}" placeholder="z. B. Kantine, Kuchen bei Oma">
+    <label class="f">Kalorien</label><input class="amtin" id="q-k" inputmode="decimal" value="${entry ? de(entry.kcal) : ''}" placeholder="kcal">
+    <div class="two"><div><label class="f">Eiweiß (g)</label><input type="text" inputmode="decimal" id="q-p" value="${entry && entry.p ? de(entry.p, 1) : ''}"></div><div><label class="f">Kohlenh. (g)</label><input type="text" inputmode="decimal" id="q-c" value="${entry && entry.c ? de(entry.c, 1) : ''}"></div><div><label class="f">Fett (g)</label><input type="text" inputmode="decimal" id="q-f" value="${entry && entry.f ? de(entry.f, 1) : ''}"></div></div>
+    <div class="btns"><button class="btn pri" id="q-save">${entry ? 'Speichern' : 'Eintragen'}</button>${entry ? '<button class="btn del" id="q-del">Löschen</button>' : ''}</div>`);
+  wireSeg('q-meal');
+  setTimeout(() => { const i = $('#q-k'); if(i && !entry) i.focus(); }, 300);
+  $('#q-save').onclick = () => {
+    const k = num($('#q-k').value); if(!(k >= 0) || isNaN(k)){ toast('Bitte Kalorien eingeben'); return; }
+    const v = id => { const x = num($(id).value); return isNaN(x) ? 0 : x; };
+    const data = {name:$('#q-name').value.trim() || 'Schnell eingetragen', meal:segVal('q-meal'), quick:true, kcal:k, p:v('#q-p'), c:v('#q-c'), f:v('#q-f')};
+    if(entry) Object.assign(entry, data); else S.log.push({id:uid(), date:S.day, ts:Date.now(), src:'app', ...data});
+    saveLog(); closeSheet(); renderAll(); toast('✓ Eingetragen');
+  };
+  if(entry) $('#q-del').onclick = () => { if(!confirmTwice('#q-del')) return; S.log = S.log.filter(x => x.id !== entry.id); saveLog(); closeSheet(); renderAll(); };
+}
+
+/* Eigenes Lebensmittel anlegen / Nährwerte bearbeiten */
+function ownFoodSheet(food, pre, meal){
+  const f = food || {name:'', brand:'', per100:{kcal:'', p:'', c:'', f:''}, serving:null, unit:'g', ...(pre || {})};
+  const n = f.per100 || {};
+  openSheet(`<h2>${food ? 'Nährwerte bearbeiten' : '✏️ Eigenes Lebensmittel'}</h2>
+    <label class="f">Name</label><input type="text" id="o-name" value="${esc(f.name)}">
+    <label class="f">Marke (optional)</label><input type="text" id="o-brand" value="${esc(f.brand || '')}">
+    <label class="f">Nährwerte pro 100</label>${segHtml('o-unit', [['g', 'g (fest)'], ['ml', 'ml (flüssig)']], f.unit || 'g')}
+    <div class="two"><div><label class="f">Kalorien (kcal)</label><input type="text" inputmode="decimal" id="o-k" value="${n.kcal !== '' && n.kcal != null ? de(n.kcal, 1) : ''}"></div><div><label class="f">Eiweiß (g)</label><input type="text" inputmode="decimal" id="o-p" value="${n.p !== '' && n.p != null ? de(n.p, 1) : ''}"></div></div>
+    <div class="two"><div><label class="f">Kohlenhydrate (g)</label><input type="text" inputmode="decimal" id="o-c" value="${n.c !== '' && n.c != null ? de(n.c, 1) : ''}"></div><div><label class="f">Fett (g)</label><input type="text" inputmode="decimal" id="o-f" value="${n.f !== '' && n.f != null ? de(n.f, 1) : ''}"></div></div>
+    <div class="two"><div><label class="f">Portion (Name, optional)</label><input type="text" id="o-sl" value="${esc(f.serving ? f.serving.label : '')}" placeholder="z. B. 1 Riegel"></div><div><label class="f">Portion in g/ml</label><input type="text" inputmode="decimal" id="o-sg" value="${f.serving && f.serving.g ? de(f.serving.g, 1) : ''}"></div></div>
+    <label class="f">Barcode (optional)</label><input type="text" inputmode="numeric" id="o-code" value="${esc(f.code || '')}">
+    <div class="btns"><button class="btn pri" id="o-save">Speichern & weiter</button>${food && S.foods[food.id] && !food.basic ? '<button class="btn del" id="o-del">Löschen</button>' : ''}</div>
+    <p class="muted" style="font-size:12px">Steht alles auf der Verpackung unter „Nährwerte pro 100 g“.</p>`);
+  wireSeg('o-unit');
+  $('#o-save').onclick = () => {
+    const name = $('#o-name').value.trim(), k = num($('#o-k').value);
+    if(!name){ toast('Bitte einen Namen eingeben'); return; } if(isNaN(k)){ toast('Bitte Kalorien pro 100 eingeben'); return; }
+    const v = id => { const x = num($(id).value); return isNaN(x) ? 0 : x; };
+    const sg = num($('#o-sg').value), code = $('#o-code').value.trim();
+    const id = food && S.foods[food.id] && !food.basic ? food.id : (code ? 'own:' + code : 'own:' + uid());
+    const nf = Object.assign(S.foods[id] || {}, {id, name, brand:$('#o-brand').value.trim(), per100:{...(food ? food.per100 : {}), kcal:k, p:v('#o-p'), c:v('#o-c'), f:v('#o-f')}, serving:sg > 0 ? {g:sg, label:$('#o-sl').value.trim() || 'Portion'} : null, unit:segVal('o-unit') || 'g', code:code || null, own:true, src:'own', fav:food ? !!food.fav : false});
+    S.foods[id] = nf; saveFoods(); toast('✓ Lebensmittel gespeichert');
+    amountSheet(nf, meal || mealForNow());
+  };
+  if($('#o-del')) $('#o-del').onclick = () => { if(!confirmTwice('#o-del')) return; delete S.foods[food.id]; saveFoods(); closeSheet(); toast('Gelöscht'); };
+}
+
+/* ================= Barcode-Scanner ================= */
+function scanSheet(meal){
+  openSheet(`<h2>📷 Barcode scannen</h2><div class="scanbox"><video id="sc-v" playsinline muted autoplay></video><div class="ln"></div></div>
+    <div class="muted" id="sc-info">Kamera wird gestartet…</div>
+    <label class="f">…oder Nummer eintippen</label><div class="two"><div style="flex:2"><input type="text" inputmode="numeric" id="sc-code" placeholder="z. B. 4008400401621"></div><div><button class="btn pri" id="sc-go" style="width:100%;min-width:0">Suchen</button></div></div>`);
+  let stream = null, timer = null, done = false, busy = false;
+  const stop = () => { done = true; clearInterval(timer); if(stream) stream.getTracks().forEach(t => t.stop()); stream = null; };
+  onSheetClose = stop;
+  const found = code => { if(done) return; stop(); onSheetClose = null; try{ navigator.vibrate && navigator.vibrate(60); }catch(e){} lookupBarcode(code, meal); };
+  $('#sc-go').onclick = () => { const c = $('#sc-code').value.replace(/\D/g, ''); if(c.length >= 6) found(c); else toast('Bitte die Nummer unter dem Barcode eingeben'); };
+  (async () => {
+    try{
+      if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('nocam');
+      stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}, width:{ideal:1280}, height:{ideal:720}}, audio:false});
+      if(done){ stream.getTracks().forEach(t => t.stop()); return; }
+      const v = $('#sc-v'); v.srcObject = stream; await v.play().catch(() => {});
+      let det = null;
+      if('BarcodeDetector' in window){ try{ det = new BarcodeDetector({formats:['ean_13', 'ean_8', 'upc_a', 'upc_e']}); }catch(e){ det = null; } }
+      let zx = null;
+      if(!det && window.ZXing){ const hints = new Map(); hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [ZXing.BarcodeFormat.EAN_13, ZXing.BarcodeFormat.EAN_8, ZXing.BarcodeFormat.UPC_A, ZXing.BarcodeFormat.UPC_E]); hints.set(ZXing.DecodeHintType.TRY_HARDER, true); zx = new ZXing.MultiFormatReader(); zx.setHints(hints); }
+      if(!det && !zx){ $('#sc-info').textContent = 'Automatisches Erkennen geht auf diesem Gerät nicht – bitte die Nummer eintippen.'; return; }
+      $('#sc-info').textContent = 'Barcode in den roten Strich halten…';
+      const cv = document.createElement('canvas'), ctx = cv.getContext('2d', {willReadFrequently:true});
+      timer = setInterval(async () => {
+        if(done || busy || !v.videoWidth) return; busy = true;
+        try{
+          if(det){ const r = await det.detect(v); if(r && r.length) found(r[0].rawValue); }
+          else{ const w = v.videoWidth, h = v.videoHeight, cw = Math.min(w, 960), ch = Math.round(cw * 0.5); cv.width = cw; cv.height = ch; ctx.drawImage(v, (w - cw) / 2, (h - ch) / 2, cw, ch, 0, 0, cw, ch); try{ const res = zx.decode(new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(new ZXing.HTMLCanvasElementLuminanceSource(cv)))); if(res) found(res.getText()); }catch(e){ /* kein Code im Bild */ } }
+        }catch(e){} busy = false;
+      }, 280);
+    }catch(e){ if(!done && $('#sc-info')) $('#sc-info').textContent = 'Kamera nicht verfügbar – bitte Kamera-Zugriff erlauben oder die Nummer eintippen.'; }
+  })();
+}
+async function lookupBarcode(code, meal){
+  const local = Object.values(S.foods).find(f => f.code === code);
+  if(local){ amountSheet(local, meal); return; }
+  openSheet(`<h2>Suche ${esc(code)}…</h2><div class="empty">⏳ Frage Open Food Facts</div>`);
+  try{
+    const f = await offBarcode(code);
+    if(f){ amountSheet(f, meal); return; }
+    toast('Produkt nicht gefunden – einfach selbst anlegen');
+  }catch(e){ toast('Keine Verbindung – Produkt selbst anlegen?'); }
+  ownFoodSheet(null, {code}, meal);
+}
+
+/* ================= Körper / Gewicht ================= */
+function lineChart(pts, opts = {}){
+  if(pts.length < 2) return '<div class="empty">Für den Verlauf werden mindestens zwei Einträge gebraucht.</div>';
+  const W = 340, H = 170, L = 34, R = 8, T = 10, B = 22;
+  const ys = pts.map(p => p.y).concat(opts.goal ? [opts.goal] : []);
+  let mn = Math.min(...ys), mx = Math.max(...ys); if(mx - mn < 2){ mn -= 1; mx += 1; } const padv = (mx - mn) * 0.1; mn -= padv; mx += padv;
+  const x0 = pts[0].t, x1 = pts[pts.length - 1].t || x0 + 1;
+  const X = t => L + (x1 === x0 ? 0 : (t - x0) / (x1 - x0)) * (W - L - R), Y = v => T + (1 - (v - mn) / (mx - mn)) * (H - T - B);
+  const d = pts.map((p, i) => `${i ? 'L' : 'M'}${X(p.t).toFixed(1)},${Y(p.y).toFixed(1)}`).join('');
+  const area = `${d}L${X(x1).toFixed(1)},${H - B}L${X(x0).toFixed(1)},${H - B}Z`;
+  const ticks = [mn + (mx - mn) * 0.15, (mn + mx) / 2, mx - (mx - mn) * 0.15];
+  const lbl = [pts[0], pts[Math.floor(pts.length / 2)], pts[pts.length - 1]];
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><defs><linearGradient id="cg" x1="0" x2="1"><stop offset="0" stop-color="#6fe3ff"/><stop offset="1" stop-color="#e59bff"/></linearGradient><linearGradient id="ca" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a78bff" stop-opacity=".6"/><stop offset="1" stop-color="#a78bff" stop-opacity="0"/></linearGradient></defs>
+    ${ticks.map(v => `<line class="grid" x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}"/><text x="2" y="${Y(v) + 3}">${de(v, opts.dec ?? 1)}</text>`).join('')}
+    ${opts.goal ? `<line class="goal" x1="${L}" x2="${W - R}" y1="${Y(opts.goal)}" y2="${Y(opts.goal)}"/>` : ''}
+    <path class="ar" d="${area}"/><path class="ln" d="${d}"/>
+    ${lbl.map((p, i) => `<text x="${X(p.t)}" y="${H - 6}" text-anchor="${i === 0 ? 'start' : i === 2 ? 'end' : 'middle'}">${fmtShortDay(p.ds)}</text>`).join('')}</svg>`;
+}
+function renderBody(){
+  const t = todayStr(), w = curWeight(), p = S.prof || {};
+  const ws = S.weights, first = ws[0], last = ws[ws.length - 1];
+  const m30 = ws.filter(x => x.date >= addDays(t, -30)), d30 = m30.length > 1 ? m30[m30.length - 1].kg - m30[0].kg : null;
+  const bmi = w && p.height ? w / Math.pow(p.height / 100, 2) : null;
+  const bmiTxt = !bmi ? '' : bmi < 18.5 ? 'Untergewicht' : bmi < 25 ? 'Normalgewicht' : bmi < 30 ? 'Übergewicht' : 'Adipositas';
+  const goalW = p.goalWeight, startW = first ? first.kg : p.weight;
+  const prog = goalW && startW && w && startW !== goalW ? Math.max(0, Math.min(1, (startW - w) / (startW - goalW))) : null;
+  const range = S.bodyRange || 90, pts = ws.filter(x => range === 'all' || x.date >= addDays(t, -range)).map(x => ({t:parse(x.date).getTime() + (x.ts ? 0 : 0), y:x.kg, ds:x.date}));
+  $('#body').innerHTML = `<div class="subhead" style="display:flex;align-items:center;gap:10px;margin:4px 0 14px"><h1 style="flex:1">Körper</h1><button class="chip" id="b-goal">🎯 Ziele</button></div>
+    <div class="card"><div style="display:flex;align-items:flex-end;justify-content:space-between;gap:10px">
+      <div><div class="muted">Aktuelles Gewicht</div><div class="big">${kg(w)}</div><div class="muted">${last ? `zuletzt ${fmtDay(last.date)}` : 'noch kein Eintrag'}</div></div>
+      <div style="text-align:right">${d30 != null ? `<div class="${d30 <= 0 ? 'grn' : 'red'}" style="font-weight:700;font-size:18px">${d30 > 0 ? '+' : ''}${de(d30, 1)} kg</div><div class="muted">in 30 Tagen</div>` : ''}</div></div>
+      ${goalW ? `<div style="margin-top:12px"><div style="display:flex;justify-content:space-between" class="muted"><span>Start ${kg(startW)}</span><span>Ziel ${kg(goalW)}</span></div><div class="prog" style="height:10px"><i style="width:${(prog || 0) * 100}%"></i></div><div class="muted" style="margin-top:4px">${w && goalW ? (Math.abs(w - goalW) < 0.15 ? '🎉 Ziel erreicht!' : `noch ${de(Math.abs(w - goalW), 1)} kg`) : ''}</div></div>` : ''}
+    </div>
+    <div class="kv three"><div><span>BMI</span><b>${bmi ? de(bmi, 1) : '–'}</b><span>${bmiTxt}</span></div><div><span>Grundumsatz</span><b>${S.prof ? de(bmr()) : '–'}</b><span>kcal/Tag</span></div><div><span>Tagesziel</span><b>${de(baseGoal(t))}</b><span>kcal${gActive() ? ' + Sport' : ''}</span></div></div>
+    <h3>Verlauf</h3>
+    ${segHtml('b-range', [[30, '30 Tage'], [90, '3 Monate'], [365, '1 Jahr'], ['all', 'Alles']], range)}
+    <div class="card" style="margin-top:8px">${lineChart(pts, {goal:goalW})}</div>
+    <h3>Einträge</h3>
+    ${ws.length ? ws.slice().reverse().slice(0, 40).map(x => `<button class="row" data-w="${x.id}"><div class="ic">${x.src === 'garmin' ? '⌚' : x.src === 'yazio' ? '🍏' : '⚖️'}</div><div class="mid"><b>${kg(x.kg)}</b><small>${fmtDay(x.date)}${x.fat ? ` · Körperfett ${de(x.fat, 1)} %` : ''}${x.src === 'garmin' ? ' · Garmin' : x.src === 'yazio' ? ' · Yazio' : ''}</small></div></button>`).join('') : '<div class="empty">Trag dein Gewicht mit ＋ ein.</div>'}`;
+  wireSeg('b-range', v => { S.bodyRange = v === 'all' ? 'all' : +v; renderBody(); });
+  $('#b-goal').onclick = goalSheet;
+  $$('#body [data-w]').forEach(b => b.onclick = () => weightSheet(S.weights.find(x => x.id === b.dataset.w)));
+}
+function weightSheet(entry){
+  const w = entry ? entry.kg : curWeight();
+  openSheet(`<h2>⚖️ ${entry ? 'Gewicht bearbeiten' : 'Gewicht eintragen'}</h2>
+    <input class="amtin" id="w-kg" inputmode="decimal" value="${w ? de(w, 1) : ''}" placeholder="kg">
+    <div class="two"><div><label class="f">Datum</label><input type="date" id="w-d" value="${entry ? entry.date : todayStr()}" max="${todayStr()}"></div><div><label class="f">Körperfett % (optional)</label><input type="text" inputmode="decimal" id="w-fat" value="${entry && entry.fat ? de(entry.fat, 1) : ''}"></div></div>
+    <div class="btns"><button class="btn pri" id="w-save">Speichern</button>${entry ? '<button class="btn del" id="w-del">Löschen</button>' : ''}</div>`);
+  $('#w-kg').onfocus = e => e.target.select();
+  $('#w-save').onclick = () => {
+    const v = num($('#w-kg').value); if(!(v > 20 && v < 400)){ toast('Bitte ein gültiges Gewicht eingeben'); return; }
+    const fat = num($('#w-fat').value), d = $('#w-d').value || todayStr();
+    if(entry) Object.assign(entry, {kg:v, date:d, fat:isNaN(fat) ? null : fat}); else S.weights.push({id:uid(), date:d, kg:v, fat:isNaN(fat) ? null : fat, src:'app', ts:Date.now()});
+    saveWeights(); closeSheet(); renderAll(); toast('✓ Gewicht gespeichert');
+  };
+  if(entry) $('#w-del').onclick = () => { if(!confirmTwice('#w-del')) return; S.weights = S.weights.filter(x => x.id !== entry.id); saveWeights(); closeSheet(); renderAll(); };
+}
+
+/* ================= Ziele ================= */
+function goalSheet(){
+  const p = Object.assign({sex:'m', birth:1990, height:178, weight:curWeight() || 80, goalWeight:'', activity:'light', goal:'keep', macro:'std', water:2000, manualKcal:''}, S.prof || {});
+  openSheet(`<h2>🎯 Meine Ziele</h2>
+    <label class="f">Geschlecht (für die Bedarfsformel)</label>${segHtml('g-sex', [['m', 'Mann'], ['f', 'Frau']], p.sex)}
+    <div class="two"><div><label class="f">Geburtsjahr</label><input type="text" inputmode="numeric" id="g-birth" value="${esc(p.birth)}"></div><div><label class="f">Größe (cm)</label><input type="text" inputmode="numeric" id="g-h" value="${esc(p.height)}"></div></div>
+    <div class="two"><div><label class="f">Gewicht jetzt (kg)</label><input type="text" inputmode="decimal" id="g-w" value="${p.weight ? de(curWeight() || p.weight, 1) : ''}"></div><div><label class="f">Zielgewicht (kg)</label><input type="text" inputmode="decimal" id="g-gw" value="${p.goalWeight ? de(p.goalWeight, 1) : ''}"></div></div>
+    <label class="f">Was möchtest du?</label>${segHtml('g-goal', Object.entries(GOALS).map(([k, [n, v]]) => [k, `${n}<br><small>${v ? (v > 0 ? '+' : '−') + de(Math.abs(v), 2) + ' kg/Woche' : '±0'}</small>`]), p.goal, 'wrap')}
+    <label class="f">Aktivität im Alltag ${gActive() ? '<span class="tag">mit Garmin automatisch</span>' : ''}</label>${segHtml('g-act', Object.entries(ACT).map(([k, [n]]) => [k, n]), p.activity)}
+    <div class="muted" id="g-actinfo" style="margin-top:4px"></div>
+    <label class="f">Nährstoff-Verteilung</label>${segHtml('g-mac', Object.entries(MACROS).map(([k, [n, a, b, c]]) => [k, `${n}<br><small>${a}/${b}/${c} %</small>`]), p.macro, 'wrap')}
+    <div class="two"><div><label class="f">Wasser-Ziel (Liter)</label><input type="text" inputmode="decimal" id="g-wa" value="${de(p.water / 1000, 1)}"></div><div><label class="f">Kalorienziel selbst (optional)</label><input type="text" inputmode="numeric" id="g-man" value="${p.manualKcal || ''}" placeholder="automatisch"></div></div>
+    <div class="card" style="margin-top:14px" id="g-res"></div>
+    <div class="btns"><button class="btn pri" id="g-save">Speichern</button></div>`);
+  const read = () => ({sex:segVal('g-sex'), birth:parseInt($('#g-birth').value, 10) || 1990, height:num($('#g-h').value) || 175, weight:num($('#g-w').value) || null, goalWeight:num($('#g-gw').value) || null, goal:segVal('g-goal'), activity:segVal('g-act'), macro:segVal('g-mac'), water:Math.round((num($('#g-wa').value) || 2) * 1000), manualKcal:parseInt($('#g-man').value, 10) || null});
+  const upd = () => {
+    const old = S.prof; S.prof = read(); const oldW = S.weights; if(S.prof.weight) S.weights = [];
+    const b = Math.round(bmr()), goal = baseGoal(todayStr()), m = MACROS[S.prof.macro];
+    const a = ACT[S.prof.activity]; $('#g-actinfo').textContent = gActive() ? 'Mit Garmin wird „Wenig“ angenommen und dein echter Sport jeden Tag dazugerechnet.' : a[1];
+    $('#g-res').innerHTML = `<div class="muted">Dein Tagesziel</div><div class="big">${de(goal)} kcal</div><div class="muted">Grundumsatz ${de(b)} kcal${gActive() && !S.prof.manualKcal ? ' · + Kalorien aus Garmin-Aktivitäten' : ''}</div>
+      <div class="macros"><div class="macro"><span class="cp">Eiweiß</span><b>${r0(goal * m[1] / 400)} g</b></div><div class="macro"><span class="cc">Kohlenhydrate</span><b>${r0(goal * m[2] / 400)} g</b></div><div class="macro"><span class="cf">Fett</span><b>${r0(goal * m[3] / 900)} g</b></div></div>
+      ${S.prof.goalWeight && S.prof.weight && GOALS[S.prof.goal][1] && Math.sign(S.prof.goalWeight - S.prof.weight) === Math.sign(GOALS[S.prof.goal][1]) ? `<div class="muted" style="margin-top:8px">📅 Zielgewicht voraussichtlich in ca. ${Math.ceil(Math.abs(S.prof.goalWeight - S.prof.weight) / Math.abs(GOALS[S.prof.goal][1]))} Wochen</div>` : ''}`;
+    S.prof = old; S.weights = oldW;
+  };
+  ['g-sex', 'g-goal', 'g-act', 'g-mac'].forEach(id => wireSeg(id, upd));
+  ['#g-birth', '#g-h', '#g-w', '#g-gw', '#g-wa', '#g-man'].forEach(s => $(s).oninput = upd);
+  upd();
+  $('#g-save').onclick = () => {
+    const n = read(); if(!n.weight){ toast('Bitte dein aktuelles Gewicht eintragen'); return; }
+    const cw = curWeight();
+    S.prof = n; saveProf();
+    if(!cw || Math.abs(cw - n.weight) >= 0.05){ const t = todayStr(), ex = S.weights.find(x => x.date === t && x.src === 'app'); if(ex) ex.kg = n.weight; else S.weights.push({id:uid(), date:t, kg:n.weight, src:'app', ts:Date.now()}); saveWeights(); }
+    closeSheet(); renderAll(); toast('✓ Ziele gespeichert');
+  };
+}
+
+/* ================= Garmin (offizielle Personal API) ================= */
+const GBASE = 'https://personal.connectapi.garmin.com';
+const GTOKEN = '/personalapitoken-service/personal-api/personal-api-key/token';
+function jwtExp(tok){ try{ const p = JSON.parse(atob(tok.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); return p.exp || 0; }catch(e){ return 0; } }
+async function gToken(force){
+  const now = Date.now() / 1000;
+  if(!force && S.g.tok && S.g.tokExp - 600 > now) return S.g.tok;
+  const r = await fetch(GBASE + GTOKEN, {method:'POST', headers:{Authorization:'ApiKey ' + S.g.key.trim(), Accept:'*/*'}});
+  if(r.status === 401 || r.status === 403) throw new Error('Garmin lehnt den Schlüssel ab – evtl. abgelaufen oder gelöscht. Bitte neuen Schlüssel erstellen.');
+  if(!r.ok) throw new Error(`Garmin antwortet nicht (Fehler ${r.status})`);
+  let txt = (await r.text()).trim(), tok = txt;
+  if(txt.startsWith('{')){ const j = JSON.parse(txt); tok = j.access_token || j.accessToken || j.token || ''; }
+  tok = tok.replace(/^"|"$/g, ''); if(!tok) throw new Error('Garmin hat keinen Zugangs-Token geliefert');
+  S.g.tok = tok; S.g.tokExp = jwtExp(tok) || now + 3600; saveG();
+  return tok;
+}
+async function gGet(path, q){
+  const u = new URL(GBASE + path); Object.entries(q || {}).forEach(([k, v]) => { if(v != null) u.searchParams.set(k, v); });
+  const send = async tok => fetch(u.toString(), {headers:{Authorization:'Bearer ' + tok, Accept:'application/json'}});
+  let r = await send(await gToken());
+  if(r.status === 401) r = await send(await gToken(true));
+  if(r.status === 204) return null;
+  if(!r.ok) throw new Error(`Fehler ${r.status} bei ${path.split('/')[1]}`);
+  const t = await r.text(); return t ? JSON.parse(t) : null;
+}
+const arr = x => Array.isArray(x) ? x : x && Array.isArray(x.data) ? x.data : x && Array.isArray(x.dailySleepDTOList) ? x.dailySleepDTOList : x && Array.isArray(x.dateWeightList) ? x.dateWeightList : [];
+const dig = (o, ...k) => k.reduce((v, key) => v && typeof v === 'object' ? v[key] : undefined, o);
+let _gBusy = false;
+async function garminSync(manual){
+  if(!S.g.key || _gBusy) return;
+  if(!NATIVE && !manual) return;
+  _gBusy = true; if(manual) toast('⌚ Garmin wird abgeglichen…');
+  const t = todayStr(), first = S.g.first, errs = [];
+  const start = addDays(t, first ? -90 : -7);
+  try{
+    await gToken();
+    try{ // Tageswerte: Schritte & Kalorien
+      const rows = arr(await gGet('/usersummary-service/v2/dailysummaries', {startDate:start, endDate:t}));
+      rows.forEach(d => { const ds = d.calendarDate; if(!ds) return; S.g.days[ds] = {steps:dig(d, 'movement', 'steps', 'value') ?? null, stepGoal:dig(d, 'movement', 'steps', 'goal') ?? null, dist:dig(d, 'movement', 'steps', 'distanceInMeters') ?? null, total:dig(d, 'calories', 'burnedTotal') ?? null, active:dig(d, 'calories', 'burnedActive') ?? null, resting:dig(d, 'calories', 'burnedResting') ?? null, rhr:dig(d, 'heartRate', 'restingValue') ?? null, stress:dig(d, 'stress', 'avgLevel') ?? null, bbMax:dig(d, 'bodyBattery', 'maxValue') ?? null, bbMin:dig(d, 'bodyBattery', 'minValue') ?? null, im:(dig(d, 'intensityMinutes', 'moderate') || 0) + 2 * (dig(d, 'intensityMinutes', 'vigorous') || 0)}; });
+    }catch(e){ errs.push('Tageswerte'); }
+    try{ // Schlaf (max. 31 Tage pro Abfrage)
+      const ss = first ? addDays(t, -30) : addDays(t, -7);
+      arr(await gGet('/sleep-service/sleep/dailySleepSummariesByDate', {startDate:ss, endDate:t})).forEach(n => { if(n.calendarDate && n.sleepTimeSeconds) S.g.sleep[n.calendarDate] = {sec:n.sleepTimeSeconds, deep:n.deepSleepSeconds, rem:n.remSleepSeconds, score:dig(n, 'sleepScores', 'overall', 'value') ?? null}; });
+    }catch(e){ errs.push('Schlaf'); }
+    try{ // Gewicht (z. B. von einer Garmin-Waage)
+      const ws = arr(await gGet(`/weight-service/weight/all/${addDays(t, first ? -365 : -30)}/${t}`));
+      let n = 0;
+      ws.forEach(x => { let w = x.weight; if(!w) return; if(w > 500) w = w / 1000; const ds = x.calendarDate || (x.date ? ymd(new Date(x.date)) : null); if(!ds) return; const id = 'g' + (x.samplePk || ds + '-' + w); if(S.weights.some(y => y.id === id)) return; S.weights.push({id, date:ds, kg:r1(w), fat:x.bodyFat || null, src:'garmin', ts:x.date || 0}); n++; });
+      if(n) saveWeights();
+    }catch(e){ errs.push('Gewicht'); }
+    try{ // Aktivitäten
+      const acts = arr(await gGet('/activitylist-service/activities/search/activities', {start:0, limit:40, startDate:addDays(t, first ? -60 : -21), endDate:t}));
+      const m = new Map(S.g.acts.map(a => [a.id, a]));
+      acts.forEach(a => m.set(a.activityId, {id:a.activityId, name:a.activityName || 'Aktivität', type:dig(a, 'activityType', 'typeKey') || '', start:a.startTimeLocal || '', dur:a.duration || 0, dist:a.distance || 0, kcal:a.calories || 0, hr:a.averageHR || null, steps:a.steps || null}));
+      S.g.acts = [...m.values()].sort((a, b) => String(b.start).localeCompare(String(a.start))).slice(0, 150);
+    }catch(e){ errs.push('Aktivitäten'); }
+    S.g.first = false; S.g.last = Date.now(); S.g.err = errs.length === 4 ? 'Abgleich fehlgeschlagen – später nochmal probieren.' : '';
+    saveG(); renderAll();
+    if(manual) toast(errs.length ? `⌚ Abgeglichen (ohne ${errs.join(', ')})` : '⌚ Garmin abgeglichen');
+  }catch(e){
+    S.g.err = e.message || String(e); saveG(); renderAll();
+    if(manual) toast(S.g.err);
+  }
+  _gBusy = false;
+}
+function garminSheet(){
+  const on = gActive();
+  openSheet(`<h2>⌚ Garmin verbinden</h2>
+    ${on ? `<div class="hint ${S.g.err ? 'bad' : 'good'}" style="margin-bottom:10px">${S.g.err ? '⚠️ ' + esc(S.g.err) : '✓ Verbunden' + (S.g.last ? ' · zuletzt abgeglichen ' + new Date(S.g.last).toLocaleString('de-DE', {weekday:'short', hour:'2-digit', minute:'2-digit'}) + ' Uhr' : '')}</div>` : ''}
+    <p class="muted">Garmin hat eine offizielle <b>Personal API</b> für die eigenen Daten. Dafür brauchst du einmalig einen persönlichen Schlüssel:</p>
+    <ol class="muted" style="padding-left:20px;margin:6px 0 10px"><li>Garmin Connect im Browser öffnen und anmelden</li><li>Einstellungen → <b>Personal API</b> → neuen Schlüssel erstellen (am besten 1 Jahr gültig)</li><li>Schlüssel kopieren (wird nur einmal angezeigt!) und hier einfügen</li></ol>
+    <button class="btn" id="gk-open" style="width:100%">🌐 Garmin-Seite öffnen</button>
+    <label class="f">Persönlicher API-Schlüssel</label><input type="password" id="gk" value="${esc(S.g.key)}" placeholder="Schlüssel hier einfügen" autocomplete="off">
+    <div class="sw"><div>Sport-Kalorien gutschreiben<div class="muted">Kalorien aus Bewegung erhöhen dein Tagesziel</div></div>${segHtml('gk-cr', [[0, 'Aus'], [50, '50 %'], [100, '100 %']], S.cfg.credit)}</div>
+    <div class="btns"><button class="btn pri" id="gk-save">${on ? 'Speichern & abgleichen' : 'Verbinden'}</button>${on ? '<button class="btn del" id="gk-del">Trennen</button>' : ''}</div>
+    <p class="muted" style="font-size:12px;margin-top:12px">🔒 Der Schlüssel bleibt nur auf deinem Handy und wird nicht mitgesichert. Abgerufen werden Schritte, Kalorien, Schlaf, Gewicht und Aktivitäten. ${NATIVE ? '' : '<br>⚠️ Im Browser blockiert Garmin die Abfrage – das klappt nur in der Android-App.'}</p>`);
+  $('#gk-open').onclick = () => openUrl('https://connect.garmin.com/app/settings/personalApiToken');
+  wireSeg('gk-cr', v => { S.cfg.credit = +v; saveCfg(); renderAll(); });
+  $('#gk-save').onclick = async () => {
+    const k = $('#gk').value.trim(); if(k.length < 10){ toast('Bitte den Schlüssel einfügen'); return; }
+    const changed = k !== S.g.key; S.g.key = k; if(changed){ S.g.tok = ''; S.g.tokExp = 0; S.g.first = true; } S.g.err = ''; saveG();
+    closeSheet(); await garminSync(true);
+  };
+  if(on) $('#gk-del').onclick = () => { if(!confirmTwice('#gk-del')) return; S.g = {key:'', tok:'', tokExp:0, days:S.g.days, sleep:S.g.sleep, acts:S.g.acts, last:0, first:true}; saveG(); closeSheet(); renderAll(); toast('Garmin getrennt (bisherige Daten bleiben)'); };
+}
+
+/* ================= Aktivität ================= */
+const ACT_ICON = t => /run/.test(t) ? '🏃' : /cycl|bik/.test(t) ? '🚴' : /swim/.test(t) ? '🏊' : /walk/.test(t) ? '🚶' : /hik/.test(t) ? '🥾' : /strength|fitness|gym/.test(t) ? '🏋️' : /yoga|pilates/.test(t) ? '🧘' : /soccer|football/.test(t) ? '⚽' : '💪';
+function barsHtml(items, goal){
+  const mx = Math.max(goal || 0, ...items.map(i => i.v || 0)) || 1;
+  return `<div class="bars">${goal ? `<div class="gl" style="bottom:${goal / mx * 100 * 0.86 + 14 * 0}%;"></div>` : ''}${items.map(i => `<div class="b ${i.cur ? 'cur' : ''}"><i class="${i.cls || ''}" style="height:${(i.v || 0) / mx * 86}%"></i><small>${i.l}</small></div>`).join('')}</div>`;
+}
+function renderAct(){
+  const t = todayStr();
+  if(!gActive() && !Object.keys(S.g.days).length){
+    $('#act').innerHTML = `<h1 style="margin:4px 0 14px">Aktivität</h1><div class="card"><div style="font-size:40px">⌚</div><h2>Garmin verbinden</h2><p class="muted">Mit deiner Garmin-Uhr kommen Schritte, verbrannte Kalorien, Schlaf, Gewicht (Garmin-Waage) und deine Aktivitäten automatisch in die App. Die Sport-Kalorien werden deinem Tagesziel gutgeschrieben – wie bei Yazio.</p><div class="btns"><button class="btn pri" id="ac-con">Jetzt verbinden</button></div></div>`;
+    $('#ac-con').onclick = garminSheet; return;
+  }
+  const d = S.g.days[t] || {}, sl = S.g.sleep[t];
+  const week = Array.from({length:7}, (_, i) => addDays(t, i - 6));
+  const steps = week.map(ds => ({v:(S.g.days[ds] || {}).steps || 0, l:WD[parse(ds).getDay()], cur:ds === t, cls:((S.g.days[ds] || {}).steps || 0) >= ((S.g.days[ds] || {}).stepGoal || 10000) ? 'ok' : ''}));
+  const avgSteps = week.map(ds => (S.g.days[ds] || {}).steps).filter(v => v != null); const avg = avgSteps.length ? avgSteps.reduce((a, b) => a + b, 0) / avgSteps.length : 0;
+  $('#act').innerHTML = `<div style="display:flex;align-items:center;gap:10px;margin:4px 0 14px"><h1 style="flex:1">Aktivität</h1><button class="chip" id="ac-sync">↻ Abgleichen</button><button class="iconbtn" id="ac-set">⚙️</button></div>
+    ${S.g.err ? `<button class="hint bad" id="ac-err" style="margin-bottom:12px">⚠️ <span>${esc(S.g.err)}</span></button>` : ''}
+    <div class="card"><div class="muted">Heute</div>
+      <div style="display:flex;align-items:baseline;gap:8px"><div class="big">${de(d.steps)}</div><span class="muted">/ ${de(d.stepGoal || 10000)} Schritte</span></div>
+      <div class="prog" style="height:10px"><i style="width:${Math.min(100, (d.steps || 0) / (d.stepGoal || 10000) * 100)}%"></i></div>
+      <div class="kv three" style="margin-bottom:0"><div><span>🔥 Aktiv</span><b>${de(d.active)}</b><span>kcal</span></div><div><span>Gesamt</span><b>${de(d.total)}</b><span>kcal</span></div><div><span>Strecke</span><b>${de((d.dist || 0) / 1000, 1)}</b><span>km</span></div></div></div>
+    <div class="kv">${d.rhr ? `<div><span>❤️ Ruhepuls</span><b>${d.rhr}</b><span>bpm</span></div>` : ''}${sl ? `<div><span>😴 Schlaf</span><b>${fmtDur(sl.sec)}</b><span>${sl.score ? 'Schlafwert ' + sl.score : ''}</span></div>` : ''}${d.bbMax != null ? `<div><span>🔋 Body Battery</span><b>${d.bbMin ?? '–'}–${d.bbMax}</b><span>heute</span></div>` : ''}${d.im ? `<div><span>⚡ Intensitätsminuten</span><b>${d.im}</b><span>heute</span></div>` : ''}${d.stress ? `<div><span>😮‍💨 Stress</span><b>${d.stress}</b><span>Durchschnitt</span></div>` : ''}</div>
+    <h3>Schritte · 7 Tage <span style="float:right;text-transform:none;letter-spacing:0">Ø ${de(avg)}</span></h3>
+    <div class="card">${barsHtml(steps)}</div>
+    <h3>Aktivitäten</h3>
+    ${S.g.acts.length ? S.g.acts.slice(0, 30).map(a => `<div class="row"><div class="ic">${ACT_ICON(a.type)}</div><div class="mid"><b>${esc(a.name)}</b><small>${a.start ? fmtDay(a.start.slice(0, 10)) + ', ' + a.start.slice(11, 16) + ' Uhr' : ''}${a.dist ? ` · ${de(a.dist / 1000, 2)} km` : ''}${a.hr ? ` · Ø ${a.hr} bpm` : ''}</small></div><div class="rt"><b>${de(a.kcal)} kcal</b><small>${fmtDur(a.dur)}</small></div></div>`).join('') : '<div class="empty">Noch keine Aktivitäten abgerufen.</div>'}
+    <p class="muted" style="font-size:12px">${S.g.last ? `Zuletzt abgeglichen: ${new Date(S.g.last).toLocaleString('de-DE', {weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'})} Uhr` : ''}</p>`;
+  $('#ac-sync').onclick = () => garminSync(true);
+  $('#ac-set').onclick = garminSheet;
+  if($('#ac-err')) $('#ac-err').onclick = garminSheet;
+}
+
+/* ================= Auswertung ================= */
+function renderStat(){
+  const t = todayStr(), n = S.statRange, days = Array.from({length:n}, (_, i) => addDays(t, i - n + 1));
+  const logged = days.filter(ds => entriesOf(ds).length);
+  const tots = logged.map(dayTotals), avg = sumOf(tots.map(x => ({kcal:x.kcal / (tots.length || 1), p:x.p / (tots.length || 1), c:x.c / (tots.length || 1), f:x.f / (tots.length || 1)})));
+  const onTarget = logged.filter(ds => { const k = dayTotals(ds).kcal, g = kcalGoal(ds); return k <= g * 1.05 && k >= g * 0.75; }).length;
+  const balance = logged.reduce((s, ds) => s + dayTotals(ds).kcal - kcalGoal(ds), 0);
+  const label = ds => n <= 7 ? WD[parse(ds).getDay()] : n <= 31 ? (parse(ds).getDate() % 5 === 1 || ds === t ? parse(ds).getDate() + '.' : '') : (parse(ds).getDate() === 1 ? MSHORT[parse(ds).getMonth()] : '');
+  const bars = days.map(ds => { const k = dayTotals(ds).kcal, g = kcalGoal(ds); return {v:k, l:label(ds), cur:ds === t, cls:!k ? '' : k > g * 1.05 ? 'over' : 'ok'}; });
+  const avgGoal = days.reduce((s, ds) => s + kcalGoal(ds), 0) / n;
+  const pk = avg.p * 4, ck = avg.c * 4, fk = avg.f * 9, mt = pk + ck + fk || 1;
+  const donut = (() => { const C = 2 * Math.PI * 45; let off = 0; return `<svg viewBox="0 0 120 120" style="transform:rotate(-90deg)">${[[pk, '#66e0ff'], [ck, '#ffcf6b'], [fk, '#ff5ec8']].map(([v, c]) => { const l = v / mt * C, s = `<circle cx="60" cy="60" r="45" fill="none" stroke="${c}" stroke-width="16" stroke-dasharray="${l} ${C}" stroke-dashoffset="${-off}"/>`; off += l; return s; }).join('')}</svg>`; })();
+  const top = {}; S.log.filter(e => e.date >= days[0]).forEach(e => { const k = e.name; top[k] = top[k] || {n:k, kcal:0, x:0}; top[k].kcal += e.kcal; top[k].x++; });
+  const topList = Object.values(top).sort((a, b) => b.kcal - a.kcal).slice(0, 8);
+  const wpts = S.weights.filter(x => x.date >= days[0]).map(x => ({t:parse(x.date).getTime(), y:x.kg, ds:x.date}));
+  const gsteps = days.map(ds => (S.g.days[ds] || {}).steps).filter(v => v != null);
+  $('#stat').innerHTML = `<h1 style="margin:4px 0 14px">Auswertung</h1>
+    ${segHtml('st-r', [[7, '7 Tage'], [30, '30 Tage'], [90, '3 Monate']], n)}
+    <div class="hstats" style="margin-top:12px"><div><b>${de(avg.kcal)}</b><span>Ø kcal/Tag</span></div><div><b>${logged.length ? onTarget + '/' + logged.length : '–'}</b><span>Tage im Ziel</span></div><div><b style="${balance > 0 ? 'background:none;color:var(--bad);-webkit-text-fill-color:var(--bad)' : ''}">${balance > 0 ? '+' : ''}${de(balance)}</b><span>Bilanz kcal</span></div></div>
+    ${logged.length && balance < 0 ? `<div class="hint good" style="margin-bottom:12px">📉 <span>Rechnerisch ca. <b>${de(-balance / 7700, 1)} kg</b> Fett weniger in diesem Zeitraum.</span></div>` : ''}
+    <h3>Kalorien pro Tag</h3><div class="card">${barsHtml(bars, avgGoal)}<div class="muted" style="font-size:11px">Gestrichelt: Ø Ziel ${de(avgGoal)} kcal · grün = im Ziel, rot = drüber</div></div>
+    <h3>Nährstoffe (Ø)</h3><div class="card"><div class="donut">${donut}<div class="leg">
+      <div><i style="background:#66e0ff"></i><span>Eiweiß</span><b>${r0(avg.p)} g</b>&nbsp;<small class="muted">${r0(pk / mt * 100)} %</small></div>
+      <div><i style="background:#ffcf6b"></i><span>Kohlenhydrate</span><b>${r0(avg.c)} g</b>&nbsp;<small class="muted">${r0(ck / mt * 100)} %</small></div>
+      <div><i style="background:#ff5ec8"></i><span>Fett</span><b>${r0(avg.f)} g</b>&nbsp;<small class="muted">${r0(fk / mt * 100)} %</small></div></div></div></div>
+    ${wpts.length > 1 ? `<h3>Gewicht</h3><div class="card">${lineChart(wpts, {goal:S.prof && S.prof.goalWeight})}<div class="muted">${wpts[wpts.length - 1].y - wpts[0].y > 0 ? '+' : ''}${de(wpts[wpts.length - 1].y - wpts[0].y, 1)} kg im Zeitraum</div></div>` : ''}
+    ${gsteps.length ? `<h3>Bewegung</h3><div class="kv"><div><span>Ø Schritte</span><b>${de(gsteps.reduce((a, b) => a + b, 0) / gsteps.length)}</b></div><div><span>Ø Sport-kcal</span><b>${de(days.reduce((s, ds) => s + activeKcal(ds), 0) / n)}</b></div></div>` : ''}
+    <h3>Größte Kalorienquellen</h3>
+    ${topList.length ? topList.map(x => `<div class="row"><div class="mid"><b>${esc(x.n)}</b><small>${x.x}× gegessen</small></div><div class="rt"><b>${de(x.kcal)} kcal</b></div></div>`).join('') : '<div class="empty">Noch keine Einträge im Zeitraum.</div>'}`;
+  wireSeg('st-r', v => { S.statRange = +v; renderStat(); });
+}
+
+/* ================= Yazio-Import (inoffizielle Schnittstelle, einmalig) ================= */
+const YZ = {base:'https://yzapi.yazio.com/v15', id:'1_4hiybetvfksgw40o0sog4s884kwc840wwso8go4k8c04goo4c', secret:'6rok2m65xuskgkgogw40wkkk8sw0osg84s8cggsc4woos4s8o', tok:null, stop:false};
+async function yzLogin(email, pw){
+  const tries = [
+    ['https://yzapi.yazio.com/v15', 'form'], ['https://yzapi.yazio.com/v20', 'json'],
+  ];
+  for(const [base, kind] of tries){
+    try{
+      const body = kind === 'json' ? JSON.stringify({client_id:YZ.id, client_secret:YZ.secret, username:email, password:pw, grant_type:'password'}) : new URLSearchParams({client_id:YZ.id, client_secret:YZ.secret, username:email, password:pw, grant_type:'password'}).toString();
+      const r = await fetch(base + '/oauth/token', {method:'POST', headers:{'Content-Type':kind === 'json' ? 'application/json' : 'application/x-www-form-urlencoded', Accept:'application/json'}, body});
+      if(r.status === 400 || r.status === 401){ const j = await r.json().catch(() => ({})); if(j.error === 'invalid_grant') throw new Error('E-Mail oder Passwort falsch'); continue; }
+      if(!r.ok) continue;
+      const j = await r.json(); if(j.access_token){ YZ.tok = j.access_token; YZ.base = base; return; }
+    }catch(e){ if(e.message === 'E-Mail oder Passwort falsch') throw e; }
+  }
+  throw new Error('Anmeldung bei Yazio nicht möglich – evtl. hat Yazio die Schnittstelle geändert.');
+}
+async function yzGet(path){
+  for(const base of [YZ.base, YZ.base.endsWith('v15') ? 'https://yzapi.yazio.com/v20' : 'https://yzapi.yazio.com/v15']){
+    const r = await fetch(base + path, {headers:{Authorization:'Bearer ' + YZ.tok, Accept:'application/json'}});
+    if(r.status === 204) return null;
+    if(r.ok){ const t = await r.text(); return t ? JSON.parse(t) : null; }
+    if(r.status === 401) throw new Error('Yazio-Anmeldung abgelaufen');
+    if(r.status !== 404 && r.status !== 410) throw new Error('Fehler ' + r.status);
+  }
+  return null;
+}
+const YZ_DAYTIME = {breakfast:'breakfast', lunch:'lunch', dinner:'dinner', snack:'snack'};
+const yzN = (n, k) => +(n && n[k]) || 0;
+function yzPer100(nut){ let e = yzN(nut, 'energy.energy'); const factor = e > 9.5 ? 1 : 100; return {kcal:e * factor, p:yzN(nut, 'nutrient.protein') * factor, c:yzN(nut, 'nutrient.carb') * factor, f:yzN(nut, 'nutrient.fat') * factor, sugar:yzN(nut, 'nutrient.sugar') * factor, fiber:yzN(nut, 'nutrient.dietaryfiber') * factor}; }
+async function yzImport(from, to, onProg){
+  const prodCache = {}, days = []; for(let d = from; d <= to; d = addDays(d, 1)) days.push(d);
+  let nEntries = 0, nWeights = 0, done = 0;
+  const have = new Set(S.log.map(e => e.id));
+  const getProd = async id => { if(prodCache[id] !== undefined) return prodCache[id]; let p = null; try{ p = await yzGet('/products/' + id); }catch(e){ p = null; } prodCache[id] = p; return p; };
+  const doDay = async ds => {
+    const res = await yzGet('/user/consumed-items?date=' + ds);
+    const products = Array.isArray(res) ? res : (res && res.products) || [], simple = (res && res.simple_products) || [], recipes = (res && res.recipe_portions) || [];
+    const sums = {};
+    for(const it of products){
+      const id = 'yz' + it.id; const meal = YZ_DAYTIME[it.daytime] || 'snack';
+      const p = await getProd(it.product_id); if(!p || !p.nutrients) continue;
+      const per100 = yzPer100(p.nutrients), g = +it.amount || 0, n = calcEntry({per100}, g);
+      sums[meal] = (sums[meal] || 0) + n.kcal;
+      const fid = 'yz:' + it.product_id;
+      if(!S.foods[fid]){ const sv = (p.servings || [])[0]; S.foods[fid] = {id:fid, name:p.name, brand:p.producer || '', per100, serving:sv && sv.amount ? {g:sv.amount, label:'1 ' + String(sv.serving || 'Portion').replace(/^\w/, c => c.toUpperCase())} : null, unit:p.base_unit === 'ml' ? 'ml' : 'g', code:(p.eans || [])[0] || null, src:'yazio', uses:0, last:parse(ds).getTime()}; }
+      else S.foods[fid].last = Math.max(S.foods[fid].last || 0, parse(ds).getTime());
+      S.foods[fid].uses = (S.foods[fid].uses || 0) + 1;
+      if(have.has(id)) continue;
+      const portions = it.serving_quantity && it.serving && it.serving !== 'g' && it.serving !== 'ml' ? +it.serving_quantity : null;
+      S.log.push({id, date:ds, ts:parse(ds).getTime(), src:'yazio', name:p.name + (p.producer ? ` (${p.producer})` : ''), meal, grams:r1(g), unit:p.base_unit === 'ml' ? 'ml' : 'g', portions, serving:portions ? {g:g / portions, label:'1 ' + it.serving} : null, kcal:r1(n.kcal), p:r1(n.p), c:r1(n.c), f:r1(n.f), food:{id:fid, name:p.name, brand:p.producer || '', per100, serving:S.foods[fid].serving, unit:S.foods[fid].unit}});
+      have.add(id); nEntries++;
+    }
+    for(const it of simple){
+      const id = 'yz' + it.id, meal = YZ_DAYTIME[it.daytime] || 'snack', nu = it.nutrients || {};
+      sums[meal] = (sums[meal] || 0) + yzN(nu, 'energy.energy');
+      if(have.has(id)) continue;
+      S.log.push({id, date:ds, ts:parse(ds).getTime(), src:'yazio', quick:true, name:it.name || 'Eintrag aus Yazio', meal, kcal:r1(yzN(nu, 'energy.energy')), p:r1(yzN(nu, 'nutrient.protein')), c:r1(yzN(nu, 'nutrient.carb')), f:r1(yzN(nu, 'nutrient.fat'))});
+      have.add(id); nEntries++;
+    }
+    if(recipes.length){ // Rezepte: Rest-Kalorien aus der Tageszusammenfassung übernehmen
+      try{
+        const sum = await yzGet('/user/widgets/daily-summary?date=' + ds);
+        const meals = (sum && sum.meals) || {};
+        for(const [dt, m] of Object.entries(meals)){
+          const meal = YZ_DAYTIME[dt] || 'snack', nu = (m && m.nutrients) || {}, rest = yzN(nu, 'energy.energy') - (sums[meal] || 0), id = `yzr-${ds}-${meal}`;
+          if(rest > 5 && !have.has(id)){ S.log.push({id, date:ds, ts:parse(ds).getTime(), src:'yazio', quick:true, name:'Rezept(e) aus Yazio', meal, kcal:r0(rest), p:0, c:0, f:0}); have.add(id); nEntries++; }
+        }
+      }catch(e){}
+    }
+  };
+  // Tage parallel abarbeiten (3 gleichzeitig)
+  let idx = 0;
+  const worker = async () => { while(idx < days.length && !YZ.stop){ const ds = days[idx++]; try{ await doDay(ds); }catch(e){ if(/abgelaufen/.test(e.message)) throw e; } done++; onProg(done / days.length, ds); } };
+  await Promise.all([worker(), worker(), worker()]);
+  // Gewicht: wöchentlich den letzten Eintrag abfragen
+  try{
+    const seen = new Set(S.weights.map(w => w.id));
+    for(let d = to; d >= from && !YZ.stop; d = addDays(d, -7)){
+      const w = await yzGet('/user/bodyvalues/weight/last?date=' + d).catch(() => null);
+      if(w && w.value && w.id && !seen.has('yz' + w.id)){ seen.add('yz' + w.id); S.weights.push({id:'yz' + w.id, date:String(w.date).slice(0, 10), kg:r1(w.value), src:'yazio', ts:0}); nWeights++; }
+    }
+  }catch(e){}
+  saveLog(); saveWeights();
+  return {nEntries, nWeights};
+}
+function yazioSheet(){
+  openSheet(`<h2>🍏 Daten aus Yazio übernehmen</h2>
+    <p class="muted">Holt dein Ernährungstagebuch (Lebensmittel, Mengen, Mahlzeiten) und dein Gewicht aus Yazio. Die Lebensmittel landen auch unter „Zuletzt benutzt“, damit du sie hier schnell wiederfindest.</p>
+    <label class="f">Yazio-E-Mail</label><input type="email" id="yz-mail" autocomplete="username">
+    <label class="f">Yazio-Passwort</label><input type="password" id="yz-pw" autocomplete="current-password">
+    <label class="f">Zeitraum</label>${segHtml('yz-r', [[30, '30 Tage'], [90, '3 Monate'], [365, '1 Jahr'], [730, '2 Jahre']], 90)}
+    <div id="yz-prog" style="display:none"><div class="pbar"><i id="yz-bar" style="width:0"></i></div><div class="muted" id="yz-st"></div></div>
+    <div class="btns"><button class="btn pri" id="yz-go">Import starten</button></div>
+    <p class="muted" style="font-size:12px;margin-top:12px">🔒 E-Mail und Passwort werden nur für diesen Import direkt an Yazio geschickt und <b>nicht gespeichert</b>.<br>⚠️ Yazio hat keine offizielle Schnittstelle – das kann irgendwann nicht mehr funktionieren. Doppelte Einträge werden beim erneuten Import übersprungen.${NATIVE ? '' : '<br>Im Browser blockiert Yazio die Abfrage – bitte in der Android-App nutzen.'}<br>Hinweis: Yazio-Anmeldung per Google/Apple geht hier nicht – dann in Yazio zuerst ein Passwort setzen.</p>`);
+  $('#yz-go').onclick = async () => {
+    const btn = $('#yz-go');
+    if(btn.dataset.run){ YZ.stop = true; btn.textContent = 'Wird abgebrochen…'; return; }
+    const mail = $('#yz-mail').value.trim(), pw = $('#yz-pw').value; if(!mail || !pw){ toast('Bitte E-Mail und Passwort eingeben'); return; }
+    const n = +segVal('yz-r'), to = todayStr(), from = addDays(to, -n + 1);
+    btn.dataset.run = 1; btn.textContent = 'Abbrechen'; YZ.stop = false; $('#yz-prog').style.display = ''; $('#yz-st').textContent = 'Anmelden…';
+    try{
+      await yzLogin(mail, pw); $('#yz-pw').value = '';
+      const res = await yzImport(from, to, (f, ds) => { if($('#yz-bar')){ $('#yz-bar').style.width = (f * 100).toFixed(1) + '%'; $('#yz-st').textContent = `Lade ${fmtDay(ds)} … ${Math.round(f * 100)} %`; } });
+      YZ.tok = null;
+      if($('#yz-st')) $('#yz-st').textContent = `✓ Fertig: ${res.nEntries} Einträge und ${res.nWeights} Gewichtswerte übernommen${YZ.stop ? ' (abgebrochen)' : ''}.`;
+      toast(`✓ ${res.nEntries} Einträge aus Yazio übernommen`); renderAll();
+    }catch(e){ YZ.tok = null; if($('#yz-st')) $('#yz-st').textContent = '⚠️ ' + (e.message || e); }
+    if($('#yz-go')){ delete btn.dataset.run; btn.textContent = 'Import starten'; }
+  };
+}
+
+/* ================= Meine Lebensmittel ================= */
+function myFoodsSheet(){
+  const list = Object.values(S.foods).filter(f => f.own || f.fav || f.code).sort((a, b) => a.name.localeCompare(b.name));
+  openSheet(`<h2>Meine Lebensmittel</h2><div class="btns" style="margin-top:0;margin-bottom:10px"><button class="btn pri" id="mf-new">＋ Neues Lebensmittel</button></div>
+    ${list.length ? list.map(f => foodRow(f)).join('') : '<div class="empty">Noch keine eigenen oder gescannten Lebensmittel.</div>'}
+    <p class="muted" style="font-size:12px">${Object.keys(S.foods).length} Lebensmittel insgesamt gespeichert (inkl. zuletzt benutzte).</p>`);
+  $('#mf-new').onclick = () => ownFoodSheet(null, null, mealForNow());
+  $$('#sheet [data-f]').forEach(b => b.onclick = () => ownFoodSheet(S.foods[b.dataset.f], null, mealForNow()));
+}
+
+/* ================= Navigation ================= */
+function showView(v){
+  S.view = v; if(!S.day) S.day = todayStr();
+  $$('.view').forEach(x => x.classList.toggle('on', x.id === 'v-' + v));
+  $$('nav button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  $('#fab').style.display = v === 'stat' || v === 'act' ? 'none' : '';
+  if(v === 'home') renderHome(); else if(v === 'body') renderBody(); else if(v === 'act') renderAct(); else if(v === 'stat') renderStat();
+}
+$$('nav button').forEach(b => b.onclick = () => { const sec = $('#v-' + b.dataset.v); if(b.dataset.v === 'home' && S.view === 'home') S.day = todayStr(); showView(b.dataset.v); if(sec) sec.scrollTop = 0; });
+$('#fab').onclick = () => { if(S.view === 'body') weightSheet(); else foodSheet(S.day === todayStr() ? mealForNow() : 'snack'); };
+function renderAll(){ const sc = ($('#v-' + S.view) || {}).scrollTop || 0; showView(S.view); const sec = $('#v-' + S.view); if(sec) sec.scrollTop = sc; }
+if(NATIVE){
+  try{ plug('App').addListener('backButton', () => { if($('#sheet').classList.contains('on')) closeSheet(); else if(S.view !== 'home') showView('home'); else plug('App').exitApp(); }); }catch(e){}
+  try{ plug('App').addListener('resume', () => { if(S.day < todayStr() && S.view === 'home' && !$('#sheet').classList.contains('on')) S.day = todayStr(); renderAll(); if(Date.now() - (S.g.last || 0) > 30 * 60e3) garminSync(false); }); }catch(e){}
+}
+
+/* ================= Einstellungen ================= */
+$('#gear').onclick = () => {
+  const c = S.cfg;
+  openSheet(`<h2>Einstellungen</h2>
+    <label class="f">Dein Vorname (für die Begrüßung)</label><input type="text" id="s-name" value="${esc(c.name)}">
+    <div class="btns" style="margin-top:12px"><button class="btn" id="s-goal">🎯 Meine Ziele</button><button class="btn" id="s-foods">🥫 Meine Lebensmittel</button></div>
+    <h3>Verbindungen</h3>
+    <div class="set-row"><div>⌚ Garmin<div class="muted">${gActive() ? (S.g.err ? 'Problem – antippen' : 'verbunden') : 'nicht verbunden'}</div></div><button class="chip" id="s-g">${gActive() ? 'Verwalten' : 'Verbinden'}</button></div>
+    <div class="set-row"><div>🍏 Yazio<div class="muted">Tagebuch & Gewicht übernehmen</div></div><button class="chip" id="s-yz">Importieren</button></div>
+    <h3>Erinnerungen</h3>
+    <div class="sw"><div>Push-Benachrichtigungen<div class="muted" id="s-notinfo"></div></div><button class="tog${c.notify ? ' on' : ''}" id="s-not"></button></div>
+    <div class="sw"><div>Mahlzeiten-Erinnerung<div class="muted">nur wenn die Mahlzeit noch leer ist</div></div><button class="tog${c.mealRemind ? ' on' : ''}" id="s-meal"></button></div>
+    <div class="two"><div><label class="f">Frühstück</label><input type="time" id="s-tb" value="${esc(c.mealTimes.breakfast)}"></div><div><label class="f">Mittag</label><input type="time" id="s-tl" value="${esc(c.mealTimes.lunch)}"></div><div><label class="f">Abend</label><input type="time" id="s-td" value="${esc(c.mealTimes.dinner)}"></div></div>
+    <div class="sw"><div>Wiegen-Erinnerung<div class="muted">morgens, wenn noch kein Gewicht da ist</div></div><button class="tog${c.weighRemind ? ' on' : ''}" id="s-weigh"></button></div>
+    <div class="two"><div><label class="f">Uhrzeit Wiegen</label><input type="time" id="s-tw" value="${esc(c.weighAt)}"></div><div><label class="f">Glasgröße Wasser (ml)</label><input type="text" inputmode="numeric" id="s-glass" value="${esc(c.glass)}"></div></div>
+    <h3>Sicherung</h3>
+    <div class="muted" id="s-bk"></div>
+    <div class="btns" style="margin-top:8px"><button class="btn" id="s-bkn">💾 Jetzt sichern</button><button class="btn" id="s-cp">Kopieren</button><button class="btn" id="s-paste">Einfügen</button></div>
+    <h3>App</h3>
+    <div class="set-row"><div class="muted" id="upd-info"></div><button class="chip" id="upd-check">Nach Updates suchen</button></div>
+    <p class="muted" style="font-size:12px;margin-top:12px">🔒 Alle Daten bleiben auf deinem Handy (plus Sicherung in <i>Dokumente/Fitness-Multiversum</i>). Lebensmittel-Suche über Open Food Facts, Aktivität über die offizielle Garmin Personal API.<br>Die Kalorien-Ziele sind Richtwerte, keine medizinische Beratung.</p>`);
+  const grab = () => { c.name = $('#s-name').value.trim(); c.mealTimes = {breakfast:$('#s-tb').value || '09:30', lunch:$('#s-tl').value || '13:30', dinner:$('#s-td').value || '19:30'}; c.weighAt = $('#s-tw').value || '07:30'; c.glass = Math.max(50, parseInt($('#s-glass').value, 10) || 250); saveCfg(); renderAll(); };
+  ['#s-name', '#s-tb', '#s-tl', '#s-td', '#s-tw', '#s-glass'].forEach(s => $(s).onchange = grab);
+  $('#s-goal').onclick = goalSheet; $('#s-foods').onclick = myFoodsSheet; $('#s-g').onclick = garminSheet; $('#s-yz').onclick = yazioSheet;
+  $('#s-not').onclick = async e => { c.notify = !c.notify; e.currentTarget.classList.toggle('on', c.notify); if(c.notify) await askNotify(true); saveCfg(); renderNotifyInfo(); };
+  [['#s-meal', 'mealRemind'], ['#s-weigh', 'weighRemind']].forEach(([id, k]) => $(id).onclick = e => { c[k] = !c[k]; e.currentTarget.classList.toggle('on', c[k]); saveCfg(); if(c[k]) askNotify(false); });
+  $('#s-bkn').onclick = () => writeBackup(true);
+  $('#s-cp').onclick = async () => { try{ await navigator.clipboard.writeText(backupJSON()); toast('Sicherung kopiert'); }catch(e){ toast('Kopieren nicht möglich'); } };
+  $('#s-paste').onclick = () => { openSheet(`<h2>Sicherung einfügen</h2><textarea id="imp-t" style="min-height:160px" placeholder="Hier die kopierte Sicherung einfügen"></textarea><div class="btns"><button class="btn pri" id="imp-go">Einfügen</button></div><p class="muted" style="font-size:12px">Vorhandene Einträge bleiben erhalten, neue kommen dazu.</p>`); $('#imp-go').onclick = () => importBackup($('#imp-t').value); };
+  $('#upd-check').onclick = () => { if(S.update) showUpdateSheet(); else checkUpdate(true); };
+  renderUpdateInfo(); renderNotifyInfo(); renderBackupInfo();
+};
+
+/* ================= Sicherung ================= */
+const BK_DIR = 'Fitness-Multiversum';
+const backupJSON = () => JSON.stringify({app:'Fitness-Multiversum', v:1, date:new Date().toISOString(), cfg:S.cfg, prof:S.prof, log:S.log, foods:S.foods, weights:S.weights, water:S.water, garmin:{days:S.g.days, sleep:S.g.sleep, acts:S.g.acts}});
+function importBackup(text){
+  try{
+    const d = JSON.parse(text); if(d.app !== 'Fitness-Multiversum') throw 0;
+    const merge = (mine, theirs) => { const m = new Map(mine.map(x => [x.id, x])); let n = 0; (theirs || []).forEach(x => { if(!m.has(x.id)){ n++; m.set(x.id, x); } }); return [[...m.values()], n]; };
+    let n1; [S.log, n1] = merge(S.log, d.log); [S.weights] = merge(S.weights, d.weights);
+    S.foods = Object.assign({}, d.foods || {}, S.foods); S.water = Object.assign({}, d.water || {}, S.water);
+    if(d.garmin){ S.g.days = Object.assign({}, d.garmin.days || {}, S.g.days); S.g.sleep = Object.assign({}, d.garmin.sleep || {}, S.g.sleep); if(!S.g.acts.length) S.g.acts = d.garmin.acts || []; saveG(); }
+    if(d.prof && !S.prof) S.prof = d.prof;
+    if(d.cfg && !S.cfg.name) S.cfg = Object.assign(S.cfg, d.cfg, {notify:S.cfg.notify});
+    saveLog(); saveWeights(); saveWater(); saveProf(); saveCfg(); closeSheet(); renderAll();
+    toast(`Eingefügt: ${n1} Einträge`);
+  }catch(e){ toast('Das ist keine gültige Sicherung'); }
+}
+let _bkT;
+function autoBackup(){ if(!NATIVE) return; clearTimeout(_bkT); _bkT = setTimeout(() => writeBackup(false), 3000); }
+async function writeBackup(manual){
+  const FS = plug('Filesystem');
+  if(!FS){ if(manual){ const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([backupJSON()], {type:'application/json'})); a.download = `fitness-multiversum-${todayStr()}.json`; a.click(); } return; }
+  try{
+    try{ const p = await FS.checkPermissions(); if(p.publicStorage !== 'granted') await FS.requestPermissions(); }catch(e){}
+    await FS.writeFile({path:`${BK_DIR}/sicherung-${todayStr()}.json`, data:backupJSON(), directory:'DOCUMENTS', encoding:'utf8', recursive:true});
+    store('fx_lastbk', Date.now()); renderBackupInfo();
+    try{
+      const r = await FS.readdir({path:BK_DIR, directory:'DOCUMENTS'});
+      const files = (r.files || []).map(f => typeof f === 'string' ? f : f.name).filter(n => /^sicherung-\d{4}-\d{2}-\d{2}\.json$/.test(n)).sort();
+      for(const n of files.slice(0, Math.max(0, files.length - 7))) await FS.deleteFile({path:`${BK_DIR}/${n}`, directory:'DOCUMENTS'}).catch(() => {});
+    }catch(e){}
+    if(manual) toast('💾 Gesichert in Dokumente/Fitness-Multiversum');
+  }catch(e){ if(manual) toast('Sicherung fehlgeschlagen: ' + (e.message || e)); }
+}
+function renderBackupInfo(){
+  const el = $('#s-bk'); if(!el) return;
+  const t = store('fx_lastbk');
+  el.textContent = !NATIVE ? 'Im Browser: „Jetzt sichern“ lädt eine Datei herunter.' : t ? `Automatisch täglich · zuletzt ${new Date(t).toLocaleString('de-DE', {weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'})} Uhr` : 'Noch keine Sicherung';
+}
+
+/* ================= App-Updates (wie bei TCG Multiversum) ================= */
+async function checkUpdate(manual){
+  if(!APP_BUILD && !manual) return;
+  try{
+    let r;
+    try{ r = await fetch(UPDATE_INFO + '?t=' + Date.now(), {cache:'no-store'}); }
+    catch(e){ if(manual) toast('Keine Verbindung – bist du online?'); return; }
+    if(!r.ok){ if(manual) toast(r.status === 404 ? 'Update-Info nicht gefunden – ist das GitHub-Repo öffentlich?' : `Update-Server antwortet nicht (Fehler ${r.status})`); return; }
+    const v = await r.json(), build = parseInt(v.build, 10);
+    S.update = (build > APP_BUILD && v.apk) ? {build, url:v.apk, notes:v.notes || '', size:v.size} : null;
+    renderUpdateInfo();
+    if(S.update){ if(manual || store('fx_upd_skip') !== build) showUpdateSheet(); }
+    else if(manual) toast('Du hast die neueste Version');
+  }catch(e){ if(manual) toast('Update-Info ist fehlerhaft'); }
+}
+function renderUpdateInfo(){ const el = $('#upd-info'); if(!el) return; el.innerHTML = `Version 1.${APP_BUILD || '–'}` + (S.update ? ` · <b style="color:var(--acc)">1.${S.update.build} verfügbar</b>` : ''); }
+function showUpdateSheet(){
+  const u = S.update; if(!u) return;
+  const notes = u.notes.replace(/\r/g, '').replace(/^#+\s*/gm, '').replace(/\*\*/g, '').trim();
+  openSheet(`<h2 style="margin:0 0 4px">Neue Version 1.${u.build}</h2>
+    <p class="muted" style="margin:0 0 10px">Du hast 1.${APP_BUILD}.${u.size ? ` Download ca. ${(u.size / 1048576).toLocaleString('de-DE', {maximumFractionDigits:1})} MB.` : ''}</p>
+    ${notes ? `<div style="white-space:pre-wrap;background:var(--panel2);border-radius:10px;padding:10px;font-size:14px;margin-bottom:12px">${esc(notes)}</div>` : ''}
+    <div class="btns"><button class="btn pri" id="u-go">Jetzt aktualisieren</button><button class="btn" id="u-later">Später</button></div>
+    <p class="muted" style="font-size:12px;margin-top:10px">Die neue APK wird im Browser geladen. Danach auf die Datei tippen und „Installieren“ wählen. Deine Daten bleiben erhalten.</p>`);
+  $('#u-go').onclick = () => openUrl(u.url);
+  $('#u-later').onclick = () => { store('fx_upd_skip', u.build); closeSheet(); };
+}
+
+/* ================= Erinnerungen ================= */
+const hashId = str => { let h = 0; for(let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0; return Math.abs(h) % 2000000000 + 1; };
+let _schedT;
+function scheduleReminders(){ if(!NATIVE) return; clearTimeout(_schedT); _schedT = setTimeout(doSchedule, 800); }
+const atTime = (ds, hhmm) => { const d = parse(ds); const [h, m] = (hhmm || '09:00').split(':').map(Number); d.setHours(h, m, 0, 0); return d; };
+async function doSchedule(){
+  const LN = plug('LocalNotifications'); if(!LN) return;
+  try{
+    const pend = await LN.getPending();
+    if(pend.notifications && pend.notifications.length) await LN.cancel({notifications:pend.notifications.map(n => ({id:n.id}))});
+    if(!S.cfg.notify) return;
+    const perm = await LN.checkPermissions(); if(perm.display !== 'granted') return;
+    const now = Date.now(), t = todayStr(), list = [];
+    const TXT = {breakfast:['☕ Frühstück eintragen?', 'Kurz eintragen, was du gefrühstückt hast.'], lunch:['🍝 Mittagessen eintragen?', 'Was gab es heute Mittag?'], dinner:['🍲 Abendessen eintragen?', 'Abendessen nicht vergessen – dann stimmt die Tagesbilanz.']};
+    for(let i = 0; i < 10; i++){
+      const ds = addDays(t, i);
+      if(S.cfg.mealRemind) Object.entries(S.cfg.mealTimes).forEach(([m, hhmm]) => { if(i === 0 && entriesOf(ds).some(e => e.meal === m)) return; const at = atTime(ds, hhmm); if(at > now) list.push({id:hashId('meal' + m + ds), title:TXT[m][0], body:TXT[m][1], schedule:{at, allowWhileIdle:true}}); });
+      if(S.cfg.weighRemind){ if(i === 0 && S.weights.some(w => w.date === ds)) continue; const at = atTime(ds, S.cfg.weighAt); if(at > now) list.push({id:hashId('weigh' + ds), title:'⚖️ Guten Morgen!', body:'Zeit fürs Wiegen – am besten vor dem Frühstück.', schedule:{at, allowWhileIdle:true}}); }
+    }
+    list.sort((a, b) => a.schedule.at - b.schedule.at);
+    if(list.length) await LN.schedule({notifications:list.slice(0, 60)});
+  }catch(e){ console.log('Erinnerungen:', e); }
+}
+async function askNotify(force){
+  const LN = plug('LocalNotifications'); if(!LN) return;
+  try{ let p = await LN.checkPermissions(); if(p.display !== 'granted' && (force || !store('fx_asked'))){ store('fx_asked', 1); p = await LN.requestPermissions(); } }catch(e){}
+  scheduleReminders();
+}
+async function renderNotifyInfo(){
+  const el = $('#s-notinfo'); if(!el) return;
+  if(!NATIVE){ el.textContent = 'nur in der Android-App'; return; }
+  try{ const p = await plug('LocalNotifications').checkPermissions(); el.textContent = !S.cfg.notify ? 'aus' : p.display === 'granted' ? 'aktiv' : 'Bitte Benachrichtigungen erlauben (Android-Einstellungen)'; }catch(e){ el.textContent = ''; }
+}
+if(NATIVE){ try{ plug('LocalNotifications').addListener('localNotificationActionPerformed', () => { closeSheet(); S.day = todayStr(); showView('home'); }); }catch(e){} }
+
+/* ================= Start ================= */
+S.day = todayStr();
+showView('home');
+if(!S.prof) setTimeout(goalSheet, 500);
+if(NATIVE){ askNotify(false); scheduleReminders(); setTimeout(() => checkUpdate(false), 1500); if(gActive() && Date.now() - (S.g.last || 0) > 30 * 60e3) setTimeout(() => garminSync(false), 1200); if(!store('fx_lastbk') || Date.now() - store('fx_lastbk') > 864e5) setTimeout(() => writeBackup(false), 4000); }
+</script>
+</body>
+</html>
