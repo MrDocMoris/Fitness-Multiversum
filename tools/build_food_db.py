@@ -19,6 +19,8 @@ CH_URL = 'https://naehrwertdaten.ch/wp-content/uploads/2023/08/Schweizer_Nahrwer
 COUNTRIES = ('en:germany', 'en:austria', 'en:switzerland')
 COLS = ['code', 'name', 'brand', 'kcal', 'p', 'c', 'f', 'sugar', 'fiber', 'salt', 'sg', 'sl', 'ns', 'nova', 'rank']
 PART_LINES = 120000
+DE_WORDS = re.compile(r"[äöüß]|\b(mit|und|ohne|aus|für|vollkorn\w*|schoko\w*|milch\w*|käse\w*|brot\w*|brötchen|wurst\w*|joghurt|quark|nudeln|sahne|butter\w*|kartoffel\w*|hähnchen\w*|huhn|rind\w*|schwein\w*|fisch\w*|gemüse\w*|obst|apfel\w*|saft\w*|getränk\w*|zucker\w*|mehl|haferflocken|müsli|keks\w*|kuchen|fruchtgummi|gummibär\w*|bier|mineralwasser|frischkäse|aufschnitt|schinken|salami|senf|soße|sauce hollandaise|gewürz\w*|nuss\w*|erdnuss\w*|riegel|eis|feinkost|salat\w*|suppe|tee|kaffee|leicht|natur|klassik|original)\b", re.I)
+OTHER_WORDS = re.compile(r"[éèêàâçùûôîœ]|\b(au|aux|avec|sans|de|du|des|le|la|les|et|chocolat|lait|noir|blé|fromage|pain|sucre|jus|fraise|pomme|poulet|beurre|biscuits?|céréales|nature|the|of|with|and|con|di|della|y|sin|leche|met|zonder|en)\b", re.I)
 
 def num(v):
     if v is None: return None
@@ -93,8 +95,14 @@ def read_off(src, max_n):
         lang = g(row, 'lang').strip().lower()
         tags = [x for x in ct.split(',') if x]
         dach_only = bool(tags) and all(x in COUNTRIES for x in tags)
-        german = bool(g(row, 'product_name_de')) or lang == 'de' or dach_only or code.startswith(('40', '41', '42', '43', '440', '90', '91', '76'))
-        prio = (scans + 1) * (4 if german else 1)
+        de_n, ot_n = len(DE_WORDS.findall(name)), len(OTHER_WORDS.findall(name))
+        mult = 1.0
+        if g(row, 'product_name_de') or lang == 'de': mult *= 10
+        if de_n > ot_n: mult *= 10
+        elif ot_n > de_n: mult *= 0.15
+        if dach_only: mult *= 3
+        if code.startswith(('40', '41', '42', '43', '440')): mult *= 2
+        prio = (scans + 1) * mult
         out.append((prio, comp, [code, name, brand, fmt(kcal, 0), fmt(p), fmt(c), fmt(f), fmt(num(g(row, 'sugars_100g'))), fmt(num(g(row, 'fiber_100g'))), fmt(num(g(row, 'salt_100g')), 2), fmt(sq, 0) if sl else '', sl, ns if ns in 'abcde' and len(ns) == 1 else '', nova if nova in ('1', '2', '3', '4') else '']))
     print(f'Open Food Facts: {n:,} Zeilen, {len(out):,} passende Produkte (behalte max. {max_n:,})', flush=True)
     out.sort(key=lambda x: (-x[0], -x[1]))
